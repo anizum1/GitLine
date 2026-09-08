@@ -386,6 +386,10 @@ class GitHubClient {
   /**
    * GET /repositories is a gap-free enumeration cursored on repo id, ~100 per
    * call. Tracking the entire public firehose costs roughly 2,500 calls/day.
+   *
+   * Note: the minimal-repository objects it returns do NOT carry
+   * `default_branch` (verified against the live API), so callers must fall back
+   * to the `HEAD` ref rather than assuming a branch name is present.
    */
   async listPublicRepositoriesSince(sinceId, etag) {
     const path = `/repositories?per_page=100${sinceId ? `&since=${sinceId}` : ""}`;
