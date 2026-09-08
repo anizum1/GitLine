@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tripline — scan a GitHub repo for exposed secrets</title>
-<meta name="description" content="Paste a public GitHub repo and scan its default branch for hard-coded API keys, tokens, and credentials — right in your browser.">
+<title>Tripline — continuous secret scanning for GitHub</title>
+<meta name="description" content="Scan a repo, every repo an owner has, or every new public repo on GitHub, for hard-coded API keys and credentials — including git history, binaries and private repos.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230F1319'/%3E%3Ccircle cx='7' cy='16' r='3' fill='%23F0483E'/%3E%3Ccircle cx='25' cy='16' r='3' fill='%23F0483E'/%3E%3Cline x1='10' y1='16' x2='22' y2='16' stroke='%23F0483E' stroke-width='2'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,112 +25,264 @@
       </svg>
       <span>Tripline</span>
     </div>
-    <a class="topbar-link" href="https://github.com/" target="_blank" rel="noopener">View source</a>
+
+    <div class="topbar-status" id="topbar-status">
+      <span class="meter" id="rate-meter" title="GitHub API requests remaining this hour">
+        <span class="meter-label">API</span>
+        <span class="meter-track"><span class="meter-fill" id="rate-fill"></span></span>
+        <span class="meter-value" id="rate-value">—</span>
+      </span>
+      <span class="queue-pill hidden" id="queue-pill"></span>
+    </div>
   </div>
 </header>
 
+<nav class="tabs" aria-label="Views">
+  <div class="wrap tabs-inner">
+    <button class="tab is-active" data-view="scan">Scan</button>
+    <button class="tab" data-view="batch">Batch</button>
+    <button class="tab" data-view="live">Live</button>
+    <button class="tab" data-view="dashboard">Dashboard</button>
+  </div>
+</nav>
+
 <main class="wrap">
 
-  <section class="hero">
-    <p class="hero-kicker">A browser-side scanner for one job</p>
-    <h1>Check a public repo for credentials it never meant to publish.</h1>
-    <p class="hero-sub">
-      Tripline reads a repository's current files straight from GitHub and checks
-      them against known key formats and high-entropy strings. Nothing is uploaded —
-      the scan runs in this tab.
-    </p>
-  </section>
-
-  <section class="console" aria-label="Scan form">
-    <form id="scan-form" autocomplete="off">
-      <div class="console-row">
-        <span class="prompt-glyph">›</span>
-        <input
-          type="text"
-          id="repo-input"
-          placeholder="github.com/owner/repository"
-          spellcheck="false"
-          aria-label="GitHub repository URL"
-        >
-        <button type="submit" id="scan-btn">Run scan</button>
-      </div>
-
-      <button type="button" id="toggle-advanced" class="link-btn">
-        Using a private/rate-limited setup? Add a token
-      </button>
-
-      <div id="advanced-row" class="advanced-row hidden">
-        <input
-          type="password"
-          id="token-input"
-          placeholder="ghp_… (optional, kept only in this browser tab)"
-          spellcheck="false"
-          aria-label="GitHub personal access token, optional"
-        >
-        <label class="remember-row">
-          <input type="checkbox" id="remember-token">
-          Remember on this device
-        </label>
-      </div>
-    </form>
-  </section>
-
-  <section id="status-area" class="status-area hidden" aria-live="polite">
-    <div class="status-line">
-      <span id="status-text">Preparing scan…</span>
-      <span id="status-count"></span>
+  <!-- ============================================ SCAN -->
+  <section class="view is-active" id="view-scan">
+    <div class="hero">
+      <p class="hero-kicker">A browser-side scanner</p>
+      <h1>Check a repo for credentials it never meant to publish.</h1>
+      <p class="hero-sub">
+        Tripline reads a repository straight from GitHub and checks it against known
+        key formats and high-entropy strings. Scanning happens in this tab — nothing
+        about the repo is uploaded anywhere.
+      </p>
     </div>
-    <div class="progress-track">
-      <div id="progress-fill" class="progress-fill"></div>
+
+    <div class="console">
+      <form id="scan-form" autocomplete="off">
+        <div class="console-row">
+          <span class="prompt-glyph">›</span>
+          <input type="text" id="repo-input" placeholder="github.com/owner/repository"
+                 spellcheck="false" aria-label="GitHub repository URL">
+          <button type="submit" id="scan-btn">Run scan</button>
+        </div>
+
+        <div class="opt-row">
+          <label class="opt"><input type="checkbox" id="opt-history"> Scan git history</label>
+          <label class="opt"><input type="checkbox" id="opt-deep"> Deep scan</label>
+          <span class="opt-note" id="opt-note">History reads recent commits; deep adds lockfiles, binaries and large files.</span>
+        </div>
+
+        <button type="button" id="toggle-advanced" class="link-btn">
+          Private repo, or hitting rate limits? Add a token
+        </button>
+
+        <div id="advanced-row" class="advanced-row hidden">
+          <input type="password" id="token-input" placeholder="github_pat_… or ghp_…"
+                 spellcheck="false" aria-label="GitHub personal access token, optional">
+          <label class="remember-row">
+            <input type="checkbox" id="remember-token">
+            Remember on this device
+          </label>
+          <p class="token-note">
+            Use a <strong>fine-grained token with read-only Contents access</strong>, scoped to
+            just the repos you mean to scan. The token is sent only to api.github.com from this
+            tab. Left unchecked it lives in this tab and is gone when you close it; checked, it
+            is stored in this browser's local storage.
+          </p>
+        </div>
+      </form>
     </div>
+
+    <div id="cost-note" class="cost-note hidden"></div>
+    <div id="scan-status" class="status-area hidden" aria-live="polite">
+      <div class="status-line">
+        <span id="status-text">Preparing scan…</span>
+        <span id="status-count"></span>
+      </div>
+      <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+    </div>
+
+    <div id="scan-error" class="error-banner hidden" role="alert"></div>
+
+    <div id="scan-results" class="results-area hidden">
+      <div class="summary-row" id="summary-row"></div>
+      <div id="findings-list" class="findings-list"></div>
+    </div>
+
+    <section class="about">
+      <h2>What this does and doesn't do</h2>
+      <div class="about-grid">
+        <div>
+          <h3>Scans</h3>
+          <ul>
+            <li>Every text file on the branch, plus lockfiles, binaries and large files in deep mode</li>
+            <li>Git history — a secret deleted in a later commit is flagged as still reachable</li>
+            <li>Private repos, with a token that has read access</li>
+            <li>Known credential formats, and unlabelled high-entropy strings</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Limits worth knowing</h3>
+          <ul>
+            <li>History goes back a bounded number of commits, not to the first commit</li>
+            <li>GitHub omits the diff for very large commits; those files are re-read whole instead</li>
+            <li>Private repos cost one API request per file, so large ones eat an hourly budget fast</li>
+            <li>Compressed and media files are skipped even in deep mode — their bytes are unreadable noise</li>
+          </ul>
+        </div>
+      </div>
+      <p class="about-note">
+        Findings are pattern matches, not confirmed leaks. Verify anything flagged before rotating
+        a key, and expect false positives from entropy detection — it trades precision for not
+        missing the unlabelled cases.
+      </p>
+    </section>
   </section>
 
-  <section id="error-area" class="error-banner hidden" role="alert"></section>
+  <!-- ============================================ BATCH -->
+  <section class="view" id="view-batch">
+    <div class="hero">
+      <p class="hero-kicker">Batch</p>
+      <h1>Scan everything one owner has.</h1>
+      <p class="hero-sub">
+        Enumerates every repository a user or organisation owns and queues them all.
+        With a token, your own private repos are included.
+      </p>
+    </div>
 
-  <section id="results-area" class="results-area hidden">
+    <div class="console">
+      <form id="batch-form" autocomplete="off">
+        <div class="console-row">
+          <span class="prompt-glyph">›</span>
+          <input type="text" id="batch-input" placeholder="owner or organisation"
+                 spellcheck="false" aria-label="GitHub user or organisation">
+          <button type="submit" id="batch-btn">Queue all repos</button>
+        </div>
+        <div class="opt-row">
+          <label class="opt"><input type="checkbox" id="batch-history"> Scan git history</label>
+          <label class="opt"><input type="checkbox" id="batch-deep"> Deep scan</label>
+          <label class="opt"><input type="checkbox" id="batch-forks"> Include forks</label>
+          <label class="opt"><input type="checkbox" id="batch-archived"> Include archived</label>
+        </div>
+      </form>
+    </div>
 
-    <div class="summary-row" id="summary-row"></div>
+    <div id="batch-error" class="error-banner hidden" role="alert"></div>
 
-    <div id="findings-list" class="findings-list"></div>
+    <div id="batch-controls" class="queue-controls hidden">
+      <button type="button" id="batch-pause" class="btn-secondary">Pause</button>
+      <button type="button" id="batch-cancel" class="btn-secondary">Cancel</button>
+      <span id="batch-progress" class="queue-progress"></span>
+    </div>
 
+    <div id="batch-queue" class="queue-list"></div>
+    <div id="batch-findings" class="findings-list"></div>
   </section>
 
-  <section class="about">
-    <h2>What this does and doesn't do</h2>
-    <div class="about-grid">
-      <div>
-        <h3>Scans</h3>
-        <ul>
-          <li>Every text file on the repository's default branch, up to 300 KB per file</li>
-          <li>Known credential formats — cloud keys, CI tokens, payment keys, private key blocks, connection strings</li>
-          <li>Unlabeled high-entropy strings that look like secrets even without a known prefix</li>
-        </ul>
+  <!-- ============================================ LIVE -->
+  <section class="view" id="view-live">
+    <div class="hero">
+      <p class="hero-kicker">Live</p>
+      <h1>Watch new repositories as they're created.</h1>
+      <p class="hero-sub">
+        Tripline enumerates every newly created public repository in creation order and
+        scans as many as the rate limit allows.
+      </p>
+    </div>
+
+    <div class="notice">
+      <h3>Discovery is complete; scanning is sampled</h3>
+      <p>
+        Enumerating new repos is cheap — every one is seen, in order, with no gaps. Scanning
+        them is not: GitHub gets roughly <strong>200,000 new public repos a day</strong> and one
+        browser tab gets a few thousand API requests an hour. The dashboard therefore reports
+        discovery and scan coverage as two separate numbers, because collapsing them into one
+        would misrepresent what this actually sees.
+      </p>
+      <p class="notice-sub">
+        Findings from other people's repositories are redacted here and never stored in the clear.
+        If you act on one, report it to the repo owner or through GitHub's private vulnerability
+        reporting — don't publish it.
+      </p>
+    </div>
+
+    <div class="console">
+      <div class="console-row console-row-plain">
+        <button type="button" id="live-toggle" class="btn-primary">Start watching</button>
+        <span id="live-state" class="live-state">Stopped</span>
       </div>
-      <div>
-        <h3>Doesn't scan</h3>
-        <ul>
-          <li>Git history — a secret removed in a later commit can still exist in an old one</li>
-          <li>Binary files, lockfiles, or anything over the size limit</li>
-          <li>Private repos, unless you supply a token with read access</li>
-        </ul>
+      <div class="opt-row">
+        <label class="opt"><input type="checkbox" id="live-deep"> Deep scan</label>
+        <span class="opt-note">History scanning is off here by design — one API call per commit is too costly at this volume.</span>
       </div>
     </div>
-    <p class="about-note">
-      Findings are pattern matches, not confirmed leaks. Verify anything flagged before
-      rotating a key, and expect a few false positives from high-entropy detection —
-      it trades precision for not missing the unlabeled cases.
-    </p>
+
+    <div id="live-error" class="error-banner hidden" role="alert"></div>
+    <div id="live-stats" class="stat-strip hidden"></div>
+    <div id="live-feed" class="feed"></div>
+  </section>
+
+  <!-- ============================================ DASHBOARD -->
+  <section class="view" id="view-dashboard">
+    <div class="hero">
+      <p class="hero-kicker">Dashboard</p>
+      <h1>Everything found, from every source.</h1>
+      <p class="hero-sub">
+        Merges scans run in this browser with the results the scheduled worker commits to
+        <code>data/</code>. Refreshes on its own.
+      </p>
+    </div>
+
+    <div id="dash-worker-state" class="worker-state"></div>
+    <div id="dash-stats" class="stat-grid"></div>
+    <div id="dash-coverage" class="coverage-panel"></div>
+
+    <div class="panel-head">
+      <h2>Severity</h2>
+    </div>
+    <div id="dash-severity" class="sev-bars"></div>
+
+    <div class="panel-head">
+      <h2>Most common findings</h2>
+    </div>
+    <div id="dash-patterns" class="rank-list"></div>
+
+    <div class="panel-head">
+      <h2>Recent findings</h2>
+      <div class="panel-actions">
+        <select id="dash-filter" aria-label="Filter by severity">
+          <option value="">All severities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <button type="button" id="dash-export" class="btn-secondary">Export JSON</button>
+        <button type="button" id="dash-clear" class="btn-secondary">Clear local</button>
+      </div>
+    </div>
+    <div id="dash-findings" class="findings-list"></div>
   </section>
 
 </main>
 
 <footer class="footer">
   <div class="wrap">
-    <span>Tripline runs entirely in your browser. Repository contents are fetched from GitHub and never sent anywhere else.</span>
+    <span>
+      Tripline scans in your browser. Secrets are redacted the moment they're detected, so
+      nothing stored or exported here contains a usable credential.
+    </span>
   </div>
 </footer>
 
 <script src="patterns.js"></script>
+<script src="scanner.js"></script>
+<script src="github.js"></script>
+<script src="engine.js"></script>
+<script src="store.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

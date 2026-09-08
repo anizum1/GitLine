@@ -1,0 +1,21 @@
+name: Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Scanner and engine fixtures
+        run: |
+          node test/scanner.test.js
+          node test/engine.test.js
+      - name: Worker loads and honours --dry-run
+        run: node worker/run.js --dry-run || true

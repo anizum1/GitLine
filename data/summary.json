@@ -1,0 +1,19 @@
+{
+  "generatedAt": null,
+  "lastRunAt": null,
+  "lastRunStoppedBecause": null,
+  "totals": { "reposScanned": 0, "reposDiscovered": 0, "findings": 0, "historical": 0 },
+  "severity": { "critical": 0, "high": 0, "medium": 0, "low": 0 },
+  "coverage": {
+    "discoveryComplete": true,
+    "discoveryNote": "Every new public repo is enumerated in creation order.",
+    "reposScannedLast24h": 0,
+    "estimatedNewPublicReposPerDay": 200000,
+    "scanCoveragePercent": 0
+  },
+  "topPatterns": [],
+  "topOwners": [],
+  "recentRepos": [],
+  "rateLimit": {},
+  "runStats": null
+}

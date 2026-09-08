@@ -1,0 +1,36 @@
+{
+  "_comment": "Tripline cron worker settings. See README.md 'Continuous scanning'.",
+
+  "modes": {
+    "discovery": true,
+    "watchlist": true
+  },
+
+  "watchlist": [],
+
+  "budget": {
+    "maxApiCalls": 700,
+    "maxRepos": 40,
+    "maxSeconds": 540
+  },
+
+  "discoveryScan": {
+    "history": false,
+    "deep": false,
+    "maxFilesToScan": 300
+  },
+
+  "watchlistScan": {
+    "history": true,
+    "deep": true,
+    "historyMaxCommits": 100,
+    "maxFilesToScan": 1500
+  },
+
+  "publish": {
+    "maxFindings": 2000,
+    "maxRecentRepos": 100,
+    "includePrivate": false,
+    "minSeverity": "low"
+  }
+}

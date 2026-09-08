@@ -1,410 +1,208 @@
 "use strict";
 
+/**
+ * UI layer. All scanning logic lives in scanner.js / engine.js so the page and
+ * the cron worker agree; this file is views, queues and wiring.
+ *
+ * Rendering rule: anything derived from repository content is written with
+ * textContent, never innerHTML. This page displays files from repositories we
+ * do not control, so escaping is structural rather than a function call someone
+ * has to remember.
+ */
+
 /* =========================================================
-   Config
+   State
 ========================================================= */
-const CONFIG = {
-  maxFileSizeBytes: 300 * 1024, // 300 KB
-  maxFilesToScan: 1500,
-  concurrency: 6,
-  entropyBase64Threshold: 4.5,
-  entropyHexThreshold: 3.0,
-  minCandidateLength: 24,
+const client = new GH.GitHubClient({ onRateLimit: renderRateMeter });
+
+const settings = {
+  token: null,
+  rememberToken: false,
 };
 
-const ENTROPY_SKIP_LINE_HINTS = [
-  "sha1", "sha256", "sha512", "commit", "checksum", "integrity",
-  "lockfileversion", "resolved", "swagger", "openapi",
-];
+const live = {
+  running: false,
+  cursor: 0,
+  discovered: 0,
+  scanned: 0,
+  findings: 0,
+  startedAt: null,
+};
+
+const $ = (id) => document.getElementById(id);
+
+/* =========================================================
+   Token
+========================================================= */
+const TOKEN_KEY = "tripline_token";
+
+function loadToken() {
+  let saved = null;
+  try { saved = localStorage.getItem(TOKEN_KEY); } catch { /* blocked storage */ }
+  if (saved) {
+    settings.token = saved;
+    settings.rememberToken = true;
+    $("token-input").value = saved;
+    $("remember-token").checked = true;
+    $("advanced-row").classList.remove("hidden");
+  }
+  client.setToken(settings.token);
+}
+
+function syncToken() {
+  const value = $("token-input").value.trim() || null;
+  settings.token = value;
+  settings.rememberToken = $("remember-token").checked;
+  client.setToken(value);
+  try {
+    if (settings.rememberToken && value) localStorage.setItem(TOKEN_KEY, value);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch { /* blocked storage — token just stays in memory */ }
+}
+
+/* =========================================================
+   Rate meter
+========================================================= */
+function renderRateMeter() {
+  const core = client.ledger.get("core");
+  const fill = $("rate-fill");
+  const value = $("rate-value");
+  if (!core || core.limit == null) { value.textContent = client.authenticated ? "—" : "60/hr"; return; }
+
+  const pct = Math.max(0, Math.min(100, (core.remaining / core.limit) * 100));
+  fill.style.width = pct + "%";
+  fill.className = "meter-fill" + (pct < 10 ? " is-low" : pct < 30 ? " is-mid" : "");
+  value.textContent = `${core.remaining}/${core.limit}`;
+  $("rate-meter").title =
+    `${core.remaining} of ${core.limit} API requests left this hour` +
+    (core.resetAt ? ` — resets ${new Date(core.resetAt).toLocaleTimeString()}` : "");
+}
+
+function renderQueuePill(text) {
+  const pill = $("queue-pill");
+  if (!text) { pill.classList.add("hidden"); return; }
+  pill.classList.remove("hidden");
+  pill.textContent = text;
+}
+
+/* =========================================================
+   Views
+========================================================= */
+function showView(name) {
+  for (const el of document.querySelectorAll(".view")) el.classList.toggle("is-active", el.id === "view-" + name);
+  for (const el of document.querySelectorAll(".tab")) el.classList.toggle("is-active", el.dataset.view === name);
+  if (name === "dashboard") refreshDashboard();
+  try { history.replaceState(null, "", "#" + name); } catch { /* file:// */ }
+}
 
 /* =========================================================
    Repo input parsing
 ========================================================= */
 function parseRepoInput(raw) {
-  let input = raw.trim();
+  let input = (raw || "").trim();
   if (!input) throw new Error("Enter a GitHub repository first.");
 
-  input = input.replace(/^git@github\.com:/, "github.com/");
-  input = input.replace(/\.git$/, "");
-  input = input.replace(/^https?:\/\//, "");
-  input = input.replace(/^www\./, "");
-  input = input.replace(/^github\.com\//, "");
-  input = input.replace(/\/+$/, "");
+  input = input.replace(/^git@github\.com:/, "github.com/")
+               .replace(/\.git$/, "")
+               .replace(/^https?:\/\//, "")
+               .replace(/^www\./, "")
+               .replace(/^github\.com\//, "")
+               .replace(/\/+$/, "");
 
   const parts = input.split("/").filter(Boolean);
   if (parts.length < 2) {
     throw new Error("That doesn't look like a GitHub repo. Try owner/repository or a full github.com URL.");
   }
-
-  const owner = parts[0];
-  const repo = parts[1];
-  let branch = null;
   const treeIdx = parts.indexOf("tree");
-  if (treeIdx !== -1 && parts[treeIdx + 1]) {
-    branch = parts.slice(treeIdx + 1).join("/");
-  }
-  return { owner, repo, branch };
-}
-
-/* =========================================================
-   GitHub API
-========================================================= */
-async function githubFetch(url, token) {
-  const headers = { Accept: "application/vnd.github+json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(url, { headers });
-  if (!res.ok) {
-    if (res.status === 404) {
-      throw new Error("Repository not found. It may be private, misspelled, or removed — private repos need a token with read access.");
-    }
-    if (res.status === 403) {
-      const remaining = res.headers.get("x-ratelimit-remaining");
-      if (remaining === "0") {
-        const reset = res.headers.get("x-ratelimit-reset");
-        const resetTime = reset ? new Date(parseInt(reset, 10) * 1000).toLocaleTimeString() : "soon";
-        throw new Error(`GitHub's API rate limit is used up (resets ${resetTime}). Add a personal access token above to scan with a higher limit.`);
-      }
-      throw new Error("GitHub refused the request (403). If this is a private repo, add a token with read access.");
-    }
-    throw new Error(`GitHub API returned an unexpected error (${res.status}).`);
-  }
-  return res.json();
-}
-
-async function fetchRepoMeta(owner, repo, token) {
-  return githubFetch(`https://api.github.com/repos/${owner}/${repo}`, token);
-}
-
-async function fetchTree(owner, repo, branch, token) {
-  return githubFetch(
-    `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
-    token
-  );
-}
-
-async function fetchRawFile(owner, repo, branch, path) {
-  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/${encodedPath}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`fetch failed (${res.status})`);
-  return res.text();
-}
-
-/* =========================================================
-   File filtering
-========================================================= */
-function shouldSkipPath(path, sizeBytes) {
-  if (sizeBytes > CONFIG.maxFileSizeBytes) return true;
-
-  const segments = path.split("/");
-  if (segments.some((seg) => SKIP_DIRS.has(seg))) return true;
-
-  if (SKIP_FILENAME_PATTERNS.some((re) => re.test(path))) return true;
-
-  const dot = path.lastIndexOf(".");
-  if (dot !== -1) {
-    const ext = path.slice(dot + 1).toLowerCase();
-    if (SKIP_EXTENSIONS.has(ext)) return true;
-  }
-  return false;
-}
-
-/* =========================================================
-   Entropy detection
-========================================================= */
-function shannonEntropy(str) {
-  const freq = {};
-  for (const ch of str) freq[ch] = (freq[ch] || 0) + 1;
-  const len = str.length;
-  let entropy = 0;
-  for (const ch in freq) {
-    const p = freq[ch] / len;
-    entropy -= p * Math.log2(p);
-  }
-  return entropy;
-}
-
-const BASE64_CANDIDATE_RE = /[A-Za-z0-9+/]{24,}={0,2}/g;
-const HEX_CANDIDATE_RE = /[0-9a-fA-F]{32,}/g;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const REPEATED_CHAR_RE = /^(.)\1+$/;
-
-function findEntropyCandidates(line) {
-  const lowerLine = line.toLowerCase();
-  if (ENTROPY_SKIP_LINE_HINTS.some((hint) => lowerLine.includes(hint))) return [];
-
-  const results = [];
-  const seen = new Set();
-
-  for (const re of [BASE64_CANDIDATE_RE, HEX_CANDIDATE_RE]) {
-    re.lastIndex = 0;
-    let m;
-    while ((m = re.exec(line)) !== null) {
-      const candidate = m[0];
-      if (candidate.length < CONFIG.minCandidateLength) continue;
-      if (UUID_RE.test(candidate)) continue;
-      if (REPEATED_CHAR_RE.test(candidate)) continue;
-      if (seen.has(candidate)) continue;
-
-      const isHexOnly = /^[0-9a-fA-F]+$/.test(candidate);
-      const entropy = shannonEntropy(candidate);
-      const threshold = isHexOnly ? CONFIG.entropyHexThreshold : CONFIG.entropyBase64Threshold;
-
-      if (entropy >= threshold) {
-        seen.add(candidate);
-        results.push({ match: candidate, index: m.index, entropy });
-      }
-    }
-  }
-  return results;
-}
-
-/* =========================================================
-   Scanning a single file's text
-========================================================= */
-function redact(match) {
-  if (match.length <= 10) return match[0] + "•".repeat(Math.max(match.length - 2, 1)) + match[match.length - 1];
-  return match.slice(0, 4) + "•".repeat(Math.min(match.length - 8, 24)) + match.slice(-4);
-}
-
-function scanFileContent(path, content) {
-  const findings = [];
-  const lines = content.split("\n");
-  const matchedLineIndices = new Set();
-
-  // Named pattern pass
-  for (const pattern of SECRET_PATTERNS) {
-    pattern.regex.lastIndex = 0;
-    let m;
-    while ((m = pattern.regex.exec(content)) !== null) {
-      const upTo = content.slice(0, m.index);
-      const lineNumber = upTo.split("\n").length;
-      const lineText = lines[lineNumber - 1] || "";
-      matchedLineIndices.add(lineNumber - 1);
-
-      findings.push({
-        file: path,
-        line: lineNumber,
-        name: pattern.name,
-        severity: pattern.severity,
-        rawLine: lineText,
-        matchText: m[0],
-        redacted: redact(m[0]),
-      });
-
-      if (pattern.regex.lastIndex === m.index) pattern.regex.lastIndex++; // guard against zero-length loops
-    }
-  }
-
-  // Entropy pass — skip lines already flagged by a named pattern
-  lines.forEach((lineText, idx) => {
-    if (matchedLineIndices.has(idx)) return;
-    if (lineText.length > 2000) return; // skip pathological long lines (minified etc.)
-
-    const candidates = findEntropyCandidates(lineText);
-    for (const c of candidates) {
-      findings.push({
-        file: path,
-        line: idx + 1,
-        name: "High-entropy string",
-        severity: "low",
-        rawLine: lineText,
-        matchText: c.match,
-        redacted: redact(c.match),
-      });
-    }
-  });
-
-  return findings;
-}
-
-/* =========================================================
-   Concurrency-limited pool
-========================================================= */
-async function runPool(items, worker, concurrency) {
-  let cursor = 0;
-  const results = [];
-  async function next() {
-    while (cursor < items.length) {
-      const i = cursor++;
-      results[i] = await worker(items[i], i);
-    }
-  }
-  const workers = Array.from({ length: Math.min(concurrency, items.length) }, next);
-  await Promise.all(workers);
-  return results;
-}
-
-/* =========================================================
-   Orchestration
-========================================================= */
-async function runScan({ owner, repo, branch, token }, callbacks) {
-  const { onStatus, onFinding, onProgress } = callbacks;
-
-  onStatus(`Looking up ${owner}/${repo}…`);
-  const meta = await fetchRepoMeta(owner, repo, token);
-  const resolvedBranch = branch || meta.default_branch;
-
-  onStatus(`Reading file tree on ${resolvedBranch}…`);
-  const treeData = await fetchTree(owner, repo, resolvedBranch, token);
-
-  const candidates = (treeData.tree || [])
-    .filter((entry) => entry.type === "blob")
-    .filter((entry) => !shouldSkipPath(entry.path, entry.size || 0));
-
-  const truncatedByGithub = !!treeData.truncated;
-  let filesToScan = candidates;
-  let truncatedByLimit = false;
-  if (filesToScan.length > CONFIG.maxFilesToScan) {
-    filesToScan = filesToScan.slice(0, CONFIG.maxFilesToScan);
-    truncatedByLimit = true;
-  }
-
-  if (filesToScan.length === 0) {
-    return {
-      owner, repo, branch: resolvedBranch,
-      findings: [], filesScanned: 0, filesSkipped: candidates.length,
-      truncatedByGithub, truncatedByLimit,
-    };
-  }
-
-  onStatus(`Scanning ${filesToScan.length} files on ${resolvedBranch}…`);
-
-  let done = 0;
-  let fetchErrors = 0;
-  const allFindings = [];
-
-  await runPool(filesToScan, async (entry) => {
-    try {
-      const content = await fetchRawFile(owner, repo, resolvedBranch, entry.path);
-      const findings = scanFileContent(entry.path, content);
-      for (const f of findings) {
-        allFindings.push(f);
-        onFinding(f);
-      }
-    } catch (e) {
-      fetchErrors++;
-    } finally {
-      done++;
-      onProgress(done, filesToScan.length);
-    }
-  }, CONFIG.concurrency);
-
   return {
-    owner, repo, branch: resolvedBranch,
-    findings: allFindings,
-    filesScanned: filesToScan.length - fetchErrors,
-    filesSkipped: candidates.length - filesToScan.length,
-    fetchErrors,
-    truncatedByGithub,
-    truncatedByLimit,
+    owner: parts[0],
+    repo: parts[1],
+    ref: treeIdx !== -1 && parts[treeIdx + 1] ? parts.slice(treeIdx + 1).join("/") : undefined,
   };
 }
 
 /* =========================================================
-   UI wiring
+   Finding rendering
 ========================================================= */
-const els = {
-  form: document.getElementById("scan-form"),
-  repoInput: document.getElementById("repo-input"),
-  scanBtn: document.getElementById("scan-btn"),
-  toggleAdvanced: document.getElementById("toggle-advanced"),
-  advancedRow: document.getElementById("advanced-row"),
-  tokenInput: document.getElementById("token-input"),
-  rememberToken: document.getElementById("remember-token"),
-  statusArea: document.getElementById("status-area"),
-  statusText: document.getElementById("status-text"),
-  statusCount: document.getElementById("status-count"),
-  progressFill: document.getElementById("progress-fill"),
-  errorArea: document.getElementById("error-area"),
-  resultsArea: document.getElementById("results-area"),
-  summaryRow: document.getElementById("summary-row"),
-  findingsList: document.getElementById("findings-list"),
-};
-
-const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 const SEVERITY_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low" };
 
-// Restore a remembered token, if any.
-(function restoreToken() {
-  const saved = localStorage.getItem("tripline_token");
-  if (saved) {
-    els.tokenInput.value = saved;
-    els.rememberToken.checked = true;
-    els.advancedRow.classList.remove("hidden");
-  }
-})();
-
-els.toggleAdvanced.addEventListener("click", () => {
-  els.advancedRow.classList.toggle("hidden");
-});
-
-function setStatus(text) {
-  els.statusText.textContent = text;
-}
-
-function setProgress(done, total) {
-  const pct = total ? Math.round((done / total) * 100) : 0;
-  els.progressFill.style.width = pct + "%";
-  els.statusCount.textContent = `${done} / ${total} files`;
-}
-
-function showError(message) {
-  els.errorArea.textContent = message;
-  els.errorArea.classList.remove("hidden");
-}
-
-function clearError() {
-  els.errorArea.classList.add("hidden");
-  els.errorArea.textContent = "";
-}
-
-function escapeHtml(str) {
-  return str.replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
-}
-
-function renderSnippet(finding) {
-  const idx = finding.rawLine.indexOf(finding.matchText);
-  if (idx === -1) return escapeHtml(finding.rawLine.trim()).slice(0, 200);
-  const before = finding.rawLine.slice(0, idx);
-  const after = finding.rawLine.slice(idx + finding.matchText.length);
-  return (
-    escapeHtml(before) +
-    `<span class="match">${escapeHtml(finding.redacted)}</span>` +
-    escapeHtml(after)
-  );
-}
-
-function findingToElement(finding, repoCtx) {
+function findingElement(f) {
   const wrap = document.createElement("div");
-  wrap.className = `finding sev-${finding.severity}`;
+  wrap.className = `finding sev-${f.severity}` + (f.historical ? " is-historical" : "");
 
-  const fileUrl = `https://github.com/${repoCtx.owner}/${repoCtx.repo}/blob/${encodeURIComponent(repoCtx.branch)}/${finding.file}#L${finding.line}`;
+  const head = document.createElement("div");
+  head.className = "finding-head";
 
-  wrap.innerHTML = `
-    <div class="finding-head">
-      <span class="sev-tag sev-${finding.severity}">${SEVERITY_LABEL[finding.severity]}</span>
-      <span class="finding-name">${escapeHtml(finding.name)}</span>
-    </div>
-    <div class="finding-location">
-      <a href="${fileUrl}" target="_blank" rel="noopener">${escapeHtml(finding.file)}:${finding.line}</a>
-    </div>
-    <div class="finding-snippet">${renderSnippet(finding)}</div>
-  `;
+  const sev = document.createElement("span");
+  sev.className = `sev-tag sev-${f.severity}`;
+  sev.textContent = SEVERITY_LABEL[f.severity] || f.severity;
+  head.appendChild(sev);
+
+  const name = document.createElement("span");
+  name.className = "finding-name";
+  name.textContent = f.name;
+  head.appendChild(name);
+
+  if (f.historical) {
+    const tag = document.createElement("span");
+    tag.className = "tag tag-historical";
+    tag.textContent = "Removed from HEAD — still in history";
+    head.appendChild(tag);
+  }
+  if (f.binary) {
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = "In binary";
+    head.appendChild(tag);
+  }
+  if (f.private) {
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = "Private";
+    head.appendChild(tag);
+  }
+  wrap.appendChild(head);
+
+  const loc = document.createElement("div");
+  loc.className = "finding-location";
+  const a = document.createElement("a");
+  a.href = ENGINE.findingUrl(f);
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = `${f.owner}/${f.repo} · ${f.file}` + (f.line ? `:${f.line}` : "");
+  loc.appendChild(a);
+  if (f.commitShort) {
+    const c = document.createElement("span");
+    c.className = "finding-commit";
+    c.textContent = ` @ ${f.commitShort}` + (f.commitDate ? ` · ${f.commitDate.slice(0, 10)}` : "");
+    loc.appendChild(c);
+  }
+  wrap.appendChild(loc);
+
+  // Snippet: textContent throughout — this is other people's file content.
+  const snip = document.createElement("div");
+  snip.className = "finding-snippet";
+  snip.appendChild(document.createTextNode(f.before || ""));
+  const match = document.createElement("span");
+  match.className = "match";
+  match.textContent = f.redacted || "";
+  snip.appendChild(match);
+  snip.appendChild(document.createTextNode(f.after || ""));
+  wrap.appendChild(snip);
+
   return wrap;
 }
 
-function renderSummary(counts, meta) {
-  const total = counts.critical + counts.high + counts.medium + counts.low;
-  els.summaryRow.innerHTML = "";
+function renderSummary(container, findings, note) {
+  container.innerHTML = "";
+  const counts = ENGINE.countBySeverity(findings);
+  const total = findings.length;
 
   if (total === 0) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.innerHTML = `<span>No credential-shaped findings across ${meta.filesScanned} scanned files.</span>`;
-    els.summaryRow.appendChild(empty);
+    empty.textContent = note || "No credential-shaped findings.";
+    container.appendChild(empty);
     return;
   }
 
@@ -415,94 +213,709 @@ function renderSummary(counts, meta) {
     ["Medium", counts.medium, "med"],
     ["Low", counts.low, "low"],
   ];
+  const historical = findings.filter((f) => f.historical).length;
+  if (historical) chips.push(["In history only", historical, "hist"]);
 
   for (const [label, count, cls] of chips) {
     if (label !== "Total" && count === 0) continue;
     const chip = document.createElement("span");
     chip.className = `summary-chip ${cls}`;
-    chip.innerHTML = `<strong>${count}</strong> ${label.toLowerCase()}`;
-    els.summaryRow.appendChild(chip);
+    const strong = document.createElement("strong");
+    strong.textContent = String(count);
+    chip.appendChild(strong);
+    chip.appendChild(document.createTextNode(" " + label.toLowerCase()));
+    container.appendChild(chip);
   }
 }
 
-els.form.addEventListener("submit", async (e) => {
+function showError(el, message) {
+  el.textContent = message;
+  el.classList.remove("hidden");
+}
+function clearError(el) {
+  el.classList.add("hidden");
+  el.textContent = "";
+}
+
+/** Persist to IndexedDB, but never let a storage failure break a scan. */
+async function persist(result) {
+  try {
+    await STORE.putFindings(result.findings.map((f) => ({ ...f, scannedAt: result.scannedAt })));
+    await STORE.putRepo({
+      fullName: `${result.owner}/${result.repo}`,
+      owner: result.owner, repo: result.repo,
+      private: result.private,
+      findings: result.findings.length,
+      historical: result.findings.filter((f) => f.historical).length,
+      filesScanned: result.tree.filesScanned,
+      scannedAt: result.scannedAt,
+    });
+  } catch { /* private window, blocked storage */ }
+}
+
+function scanOptionsFromForm(historyEl, deepEl) {
+  return {
+    history: historyEl && historyEl.checked,
+    deep: deepEl && deepEl.checked,
+  };
+}
+
+/* =========================================================
+   Scan view
+========================================================= */
+async function runSingleScan(e) {
   e.preventDefault();
-  clearError();
-  els.resultsArea.classList.add("hidden");
-  els.findingsList.innerHTML = "";
-  els.summaryRow.innerHTML = "";
+  syncToken();
+  clearError($("scan-error"));
+  $("scan-results").classList.add("hidden");
+  $("findings-list").innerHTML = "";
+  $("summary-row").innerHTML = "";
+  $("cost-note").classList.add("hidden");
 
-  const rawInput = els.repoInput.value;
-  const token = els.tokenInput.value.trim() || null;
+  let target;
+  try { target = parseRepoInput($("repo-input").value); }
+  catch (err) { showError($("scan-error"), err.message); return; }
 
-  if (els.rememberToken.checked && token) {
-    localStorage.setItem("tripline_token", token);
-  } else if (!els.rememberToken.checked) {
-    localStorage.removeItem("tripline_token");
-  }
+  const opts = scanOptionsFromForm($("opt-history"), $("opt-deep"));
 
-  let parsed;
-  try {
-    parsed = parseRepoInput(rawInput);
-  } catch (err) {
-    showError(err.message);
-    return;
-  }
-
-  els.scanBtn.disabled = true;
-  els.scanBtn.textContent = "Scanning…";
-  els.statusArea.classList.remove("hidden");
-  els.progressFill.style.width = "0%";
-  els.statusCount.textContent = "";
-  setStatus("Starting…");
-
-  const counts = { critical: 0, high: 0, medium: 0, low: 0 };
-  let repoCtx = { owner: parsed.owner, repo: parsed.repo, branch: parsed.branch };
+  $("scan-btn").disabled = true;
+  $("scan-btn").textContent = "Scanning…";
+  $("scan-status").classList.remove("hidden");
+  $("progress-fill").style.width = "0%";
+  $("status-count").textContent = "";
+  $("status-text").textContent = "Starting…";
 
   try {
-    const result = await runScan(
-      { ...parsed, token },
-      {
-        onStatus: setStatus,
-        onProgress: setProgress,
-        onFinding: (finding) => {
-          counts[finding.severity]++;
-        },
-      }
-    );
-
-    repoCtx = { owner: result.owner, repo: result.repo, branch: result.branch };
-
-    // Sort findings by severity, then file, then line, and render once scanning completes
-    const sorted = result.findings.slice().sort((a, b) => {
-      const sevDiff = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
-      if (sevDiff !== 0) return sevDiff;
-      if (a.file !== b.file) return a.file < b.file ? -1 : 1;
-      return a.line - b.line;
+    const result = await ENGINE.scanRepo(client, target, opts, {
+      onStatus: (t) => { $("status-text").textContent = t; },
+      onProgress: (done, total) => {
+        $("progress-fill").style.width = (total ? Math.round((done / total) * 100) : 0) + "%";
+        $("status-count").textContent = `${done} / ${total} files`;
+      },
+      onHistoryProgress: (done, total) => {
+        $("status-text").textContent = `Scanning history — commit ${done} of ${total}…`;
+      },
     });
 
-    renderSummary(counts, result);
-    for (const finding of sorted) {
-      els.findingsList.appendChild(findingToElement(finding, repoCtx));
+    if (result.private) {
+      const note = $("cost-note");
+      note.textContent =
+        `Private repo: file contents came from the API, costing about one request per file ` +
+        `(${result.tree.filesScanned} scanned).`;
+      note.classList.remove("hidden");
     }
 
-    let statusMsg = `Done — ${result.filesScanned} files scanned`;
-    if (result.filesSkipped) statusMsg += `, ${result.filesSkipped} skipped by size/type`;
-    if (result.fetchErrors) statusMsg += `, ${result.fetchErrors} failed to fetch`;
-    setStatus(statusMsg);
+    renderSummary($("summary-row"), result.findings,
+      `No credential-shaped findings across ${result.tree.filesScanned} scanned files.`);
+    const frag = document.createDocumentFragment();
+    for (const f of ENGINE.sortFindings(result.findings)) frag.appendChild(findingElement(f));
+    $("findings-list").appendChild(frag);
 
-    if (result.truncatedByGithub) {
-      showError("GitHub truncated the file listing for this repo (it's very large) — some files were not scanned.");
-    } else if (result.truncatedByLimit) {
-      showError(`This repo has more than ${CONFIG.maxFilesToScan} scannable files — only the first ${CONFIG.maxFilesToScan} were checked.`);
+    let msg = `Done — ${result.tree.filesScanned} files scanned`;
+    if (result.tree.filesSkipped) msg += `, ${result.tree.filesSkipped} skipped`;
+    if (result.tree.lfsSkipped) msg += `, ${result.tree.lfsSkipped} LFS pointers`;
+    if (result.tree.fetchErrors) msg += `, ${result.tree.fetchErrors} failed`;
+    if (result.history) {
+      const n = result.history.commitsScanned;
+      msg += ` · ${n} commit${n === 1 ? "" : "s"}`;
+    }
+    $("status-text").textContent = msg;
+
+    if (result.tree.truncatedByGithub) {
+      showError($("scan-error"), "GitHub truncated the file listing for this repo (it's very large) — some files were not scanned.");
+    } else if (result.tree.truncatedByLimit) {
+      showError($("scan-error"), `More than ${ENGINE.ENGINE_DEFAULTS.maxFilesToScan} scannable files — only the first ${ENGINE.ENGINE_DEFAULTS.maxFilesToScan} were checked.`);
     }
 
-    els.resultsArea.classList.remove("hidden");
+    $("scan-results").classList.remove("hidden");
+    await persist(result);
   } catch (err) {
-    showError(err.message || "Something went wrong while scanning.");
-    els.statusArea.classList.add("hidden");
+    showError($("scan-error"), err.message || "Something went wrong while scanning.");
+    $("scan-status").classList.add("hidden");
   } finally {
-    els.scanBtn.disabled = false;
-    els.scanBtn.textContent = "Run scan";
+    $("scan-btn").disabled = false;
+    $("scan-btn").textContent = "Run scan";
+    renderRateMeter();
   }
-});
+}
+
+/* =========================================================
+   Scan queue — shared by Batch and Live
+========================================================= */
+class ScanQueue {
+  constructor({ concurrency = 2, onEvent }) {
+    this.items = [];
+    this.concurrency = concurrency;
+    this.onEvent = onEvent || (() => {});
+    this.running = false;
+    this.paused = false;
+    this.cancelled = false;
+    this.active = 0;
+    this.done = 0;
+    this.findings = [];
+  }
+
+  add(targets, opts) {
+    for (const t of targets) {
+      this.items.push({ target: t, opts, status: "queued", findings: 0, error: null });
+    }
+    this.onEvent({ type: "added" });
+  }
+
+  get pending() { return this.items.filter((i) => i.status === "queued").length; }
+  get total() { return this.items.length; }
+
+  async start() {
+    if (this.running) return;
+    this.running = true;
+    this.cancelled = false;
+    const workers = Array.from({ length: this.concurrency }, () => this.worker());
+    await Promise.all(workers);
+    this.running = false;
+    this.onEvent({ type: "finished" });
+  }
+
+  async worker() {
+    for (;;) {
+      if (this.cancelled) return;
+      while (this.paused && !this.cancelled) await GH.sleep(200);
+      const item = this.items.find((i) => i.status === "queued");
+      if (!item) return;
+
+      item.status = "scanning";
+      this.active++;
+      this.onEvent({ type: "item", item });
+
+      try {
+        const result = await ENGINE.scanRepo(client, item.target, item.opts, {});
+        item.status = "done";
+        item.findings = result.findings.length;
+        item.result = result;
+        this.findings.push(...result.findings);
+        await persist(result);
+        this.onEvent({ type: "item", item, result });
+      } catch (e) {
+        item.status = "error";
+        item.error = e.message;
+        // A rate limit affects every worker, not just this item — hold the queue.
+        if (e.name === "RateLimitError") {
+          this.paused = true;
+          this.onEvent({ type: "ratelimited", message: e.message });
+        }
+        this.onEvent({ type: "item", item });
+      } finally {
+        this.active--;
+        this.done++;
+        renderRateMeter();
+      }
+    }
+  }
+
+  pause() { this.paused = true; this.onEvent({ type: "paused" }); }
+  resume() { this.paused = false; this.onEvent({ type: "resumed" }); if (!this.running) this.start(); }
+  cancel() { this.cancelled = true; this.paused = false; this.onEvent({ type: "cancelled" }); }
+}
+
+/* =========================================================
+   Batch view
+========================================================= */
+let batchQueue = null;
+
+async function runBatch(e) {
+  e.preventDefault();
+  syncToken();
+  clearError($("batch-error"));
+  $("batch-queue").innerHTML = "";
+  $("batch-findings").innerHTML = "";
+
+  const login = $("batch-input").value.trim().replace(/^@/, "").replace(/\/+$/, "");
+  if (!login) { showError($("batch-error"), "Enter a user or organisation."); return; }
+
+  $("batch-btn").disabled = true;
+  $("batch-btn").textContent = "Listing…";
+
+  try {
+    const me = await client.getAuthenticatedUser();
+    const repos = await client.listOwnerRepos(login, {
+      authenticatedLogin: me && me.login,
+      includeForks: $("batch-forks").checked,
+      includeArchived: $("batch-archived").checked,
+    });
+
+    if (!repos.length) { showError($("batch-error"), `No scannable repositories found for ${login}.`); return; }
+
+    const privateCount = repos.filter((r) => r.private).length;
+    if (privateCount) {
+      showError($("batch-error"),
+        `${privateCount} of ${repos.length} repos are private — those cost about one API request per file. ` +
+        `Watch the meter in the header.`);
+    }
+
+    const targets = repos.map((r) => ({
+      owner: r.owner.login, repo: r.name,
+      private: !!r.private, defaultBranch: r.default_branch || "HEAD",
+    }));
+    const opts = scanOptionsFromForm($("batch-history"), $("batch-deep"));
+
+    batchQueue = new ScanQueue({ concurrency: 2, onEvent: onBatchEvent });
+    batchQueue.add(targets, opts);
+    renderBatchQueue();
+    $("batch-controls").classList.remove("hidden");
+    batchQueue.start();
+  } catch (err) {
+    showError($("batch-error"), err.message);
+  } finally {
+    $("batch-btn").disabled = false;
+    $("batch-btn").textContent = "Queue all repos";
+  }
+}
+
+function onBatchEvent(ev) {
+  if (ev.type === "ratelimited") showError($("batch-error"), ev.message + " Queue paused — resume when it resets.");
+  renderBatchQueue();
+  if (ev.type === "item" && ev.result && ev.result.findings.length) {
+    const frag = document.createDocumentFragment();
+    for (const f of ENGINE.sortFindings(ev.result.findings)) frag.appendChild(findingElement(f));
+    $("batch-findings").appendChild(frag);
+  }
+  if (ev.type === "finished") renderQueuePill(null);
+}
+
+function renderBatchQueue() {
+  if (!batchQueue) return;
+  const q = batchQueue;
+  const list = $("batch-queue");
+  list.innerHTML = "";
+
+  for (const item of q.items) {
+    const row = document.createElement("div");
+    row.className = `queue-row is-${item.status}`;
+
+    const name = document.createElement("span");
+    name.className = "queue-name";
+    name.textContent = `${item.target.owner}/${item.target.repo}`;
+    row.appendChild(name);
+
+    const status = document.createElement("span");
+    status.className = "queue-status";
+    status.textContent = item.status === "done"
+      ? (item.findings ? `${item.findings} finding${item.findings === 1 ? "" : "s"}` : "clean")
+      : item.status === "error" ? (item.error || "error") : item.status;
+    row.appendChild(status);
+    list.appendChild(row);
+  }
+
+  const doneCount = q.items.filter((i) => i.status === "done" || i.status === "error").length;
+  $("batch-progress").textContent = `${doneCount} / ${q.total} repos · ${q.findings.length} findings`;
+  $("batch-pause").textContent = q.paused ? "Resume" : "Pause";
+  renderQueuePill(doneCount < q.total ? `${doneCount}/${q.total}` : null);
+}
+
+/* =========================================================
+   Live view — continuous discovery
+========================================================= */
+let liveQueue = null;
+
+async function toggleLive() {
+  if (live.running) { stopLive(); return; }
+  syncToken();
+  clearError($("live-error"));
+
+  if (!client.authenticated) {
+    showError($("live-error"),
+      "Without a token this gets 60 API requests an hour, which is barely enough to discover, " +
+      "let alone scan. Add a token on the Scan tab for 5,000/hour.");
+  }
+
+  live.running = true;
+  live.startedAt = Date.now();
+  $("live-toggle").textContent = "Stop watching";
+  $("live-state").textContent = "Watching";
+  $("live-stats").classList.remove("hidden");
+
+  live.cursor = await STORE.getMeta("discoveryCursor", 0).catch(() => 0);
+  liveQueue = new ScanQueue({ concurrency: 2, onEvent: onLiveEvent });
+  liveLoop();
+}
+
+function stopLive() {
+  live.running = false;
+  if (liveQueue) liveQueue.cancel();
+  $("live-toggle").textContent = "Start watching";
+  $("live-state").textContent = "Stopped";
+  renderQueuePill(null);
+}
+
+async function liveLoop() {
+  const opts = { history: false, deep: $("live-deep").checked, maxFilesToScan: 300 };
+
+  while (live.running) {
+    try {
+      // Cold start: begin at the present rather than replaying all of GitHub.
+      if (!live.cursor) {
+        const probe = await client.listPublicRepositoriesSince(0);
+        live.cursor = probe.maxId || 0;
+      }
+
+      const page = await client.listPublicRepositoriesSince(live.cursor);
+      const fresh = (page.repos || []).filter((r) => !r.fork && !r.private);
+
+      if (fresh.length) {
+        live.cursor = page.maxId;
+        live.discovered += fresh.length;
+        await STORE.setMeta("discoveryCursor", live.cursor).catch(() => {});
+
+        liveQueue.add(fresh.map((r) => ({
+          owner: r.owner.login, repo: r.name,
+          private: false, defaultBranch: r.default_branch || "HEAD",
+        })), opts);
+
+        if (!liveQueue.running) liveQueue.start();
+      }
+
+      renderLiveStats();
+      // Back off when the queue is deep — discovery outruns scanning by orders
+      // of magnitude, and queueing more we'll never reach helps nobody.
+      const backlog = liveQueue.pending;
+      await GH.sleep(backlog > 50 ? 15000 : 4000);
+    } catch (e) {
+      if (e.name === "RateLimitError") {
+        showError($("live-error"), e.message + " Discovery paused until it resets.");
+        $("live-state").textContent = "Rate limited";
+        await GH.sleep(60000);
+        clearError($("live-error"));
+        $("live-state").textContent = "Watching";
+      } else {
+        showError($("live-error"), e.message);
+        await GH.sleep(10000);
+      }
+    }
+  }
+}
+
+function onLiveEvent(ev) {
+  if (ev.type === "item" && ev.item.status === "done") {
+    live.scanned++;
+    if (ev.result && ev.result.findings.length) {
+      live.findings += ev.result.findings.length;
+      const frag = document.createDocumentFragment();
+      for (const f of ENGINE.sortFindings(ev.result.findings)) frag.appendChild(findingElement(f));
+      const feed = $("live-feed");
+      feed.insertBefore(frag, feed.firstChild);
+      while (feed.childElementCount > 200) feed.removeChild(feed.lastChild);
+    }
+  }
+  if (ev.type === "ratelimited") {
+    showError($("live-error"), ev.message);
+    $("live-state").textContent = "Rate limited";
+  }
+  renderLiveStats();
+}
+
+function renderLiveStats() {
+  const el = $("live-stats");
+  const mins = live.startedAt ? Math.max(1, (Date.now() - live.startedAt) / 60000) : 1;
+  const pending = liveQueue ? liveQueue.pending : 0;
+  const stats = [
+    ["Discovered", live.discovered],
+    ["Scanned", live.scanned],
+    ["Queued", pending],
+    ["Findings", live.findings],
+    ["Repos/min", (live.scanned / mins).toFixed(1)],
+  ];
+  el.innerHTML = "";
+  for (const [label, value] of stats) {
+    const s = document.createElement("div");
+    s.className = "stat";
+    const v = document.createElement("div");
+    v.className = "stat-value";
+    v.textContent = String(value);
+    const l = document.createElement("div");
+    l.className = "stat-label";
+    l.textContent = label;
+    s.appendChild(v); s.appendChild(l);
+    el.appendChild(s);
+  }
+  renderQueuePill(pending ? `${pending} queued` : null);
+}
+
+/* =========================================================
+   Dashboard
+========================================================= */
+let dashTimer = null;
+let dashCache = { local: [], worker: null, workerFindings: [] };
+
+async function fetchWorkerData() {
+  const bust = `?t=${Date.now()}`;
+  try {
+    const [s, f] = await Promise.all([
+      fetch("./data/summary.json" + bust).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("./data/findings.json" + bust).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    dashCache.worker = s;
+    dashCache.workerFindings = (f && f.findings) || [];
+  } catch { /* worker has never run, or we're on file:// */ }
+}
+
+async function refreshDashboard() {
+  await fetchWorkerData();
+  try { dashCache.local = await STORE.allFindings(2000); } catch { dashCache.local = []; }
+
+  const seen = new Set();
+  const all = [];
+  for (const f of [...dashCache.local, ...dashCache.workerFindings]) {
+    const key = STORE.findingId(f);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    all.push(f);
+  }
+  all.sort((a, b) => String(b.scannedAt || "").localeCompare(String(a.scannedAt || "")));
+
+  renderWorkerState();
+  renderDashStats(all);
+  renderCoverage();
+  renderSeverityBars(all);
+  renderTopPatterns(all);
+  renderDashFindings(all);
+
+  if (!dashTimer) dashTimer = setInterval(refreshDashboard, 60000);
+}
+
+function renderWorkerState() {
+  const el = $("dash-worker-state");
+  const w = dashCache.worker;
+  el.innerHTML = "";
+  const dot = document.createElement("span");
+  const text = document.createElement("span");
+
+  // A seeded but never-run worker has null timestamps; treat that as idle
+  // rather than letting Date(null) report a run in 1970.
+  if (!w || !(w.lastRunAt || w.generatedAt)) {
+    el.className = "worker-state is-idle";
+    dot.className = "dot";
+    text.textContent =
+      "Scheduled worker hasn't published anything yet. Enable the Tripline scan workflow, " +
+      "or run it once from the Actions tab, and results will appear here automatically.";
+  } else {
+    const age = Date.now() - new Date(w.lastRunAt || w.generatedAt).getTime();
+    const mins = Math.round(age / 60000);
+    const stale = age > 45 * 60 * 1000;
+    el.className = "worker-state " + (stale ? "is-stale" : "is-live");
+    dot.className = "dot";
+    text.textContent =
+      `Worker last ran ${mins < 1 ? "just now" : mins + " min ago"}` +
+      ` · ${w.runStats ? w.runStats.reposScanned : 0} repos, ${w.runStats ? w.runStats.apiCalls : 0} API calls` +
+      (w.lastRunStoppedBecause ? ` · stopped: ${w.lastRunStoppedBecause}` : "") +
+      (stale ? " · looks stale" : "");
+  }
+  el.appendChild(dot);
+  el.appendChild(text);
+}
+
+function renderDashStats(all) {
+  const w = dashCache.worker;
+  const historical = all.filter((f) => f.historical).length;
+  const repos = new Set(all.map((f) => `${f.owner}/${f.repo}`)).size;
+
+  const stats = [
+    ["Findings", all.length],
+    ["Repos affected", repos],
+    ["In history only", historical],
+    ["Repos scanned", w ? w.totals.reposScanned : "—"],
+    ["Repos discovered", w ? w.totals.reposDiscovered : "—"],
+  ];
+
+  const el = $("dash-stats");
+  el.innerHTML = "";
+  for (const [label, value] of stats) {
+    const s = document.createElement("div");
+    s.className = "stat";
+    const v = document.createElement("div");
+    v.className = "stat-value";
+    v.textContent = String(value);
+    const l = document.createElement("div");
+    l.className = "stat-label";
+    l.textContent = label;
+    s.appendChild(v); s.appendChild(l);
+    el.appendChild(s);
+  }
+}
+
+/**
+ * Discovery and scan coverage are shown separately and deliberately. Every new
+ * public repo is enumerated; only a tiny fraction can be scanned. One blended
+ * percentage would imply a completeness this does not have.
+ */
+function renderCoverage() {
+  const el = $("dash-coverage");
+  const c = dashCache.worker && dashCache.worker.coverage;
+  el.innerHTML = "";
+  if (!c) { el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+
+  const mk = (label, value, note) => {
+    const d = document.createElement("div");
+    d.className = "coverage-item";
+    const v = document.createElement("div");
+    v.className = "coverage-value";
+    v.textContent = value;
+    const l = document.createElement("div");
+    l.className = "coverage-label";
+    l.textContent = label;
+    const n = document.createElement("div");
+    n.className = "coverage-note";
+    n.textContent = note;
+    d.appendChild(v); d.appendChild(l); d.appendChild(n);
+    return d;
+  };
+
+  el.appendChild(mk("Discovery", "Complete",
+    "Every new public repo is enumerated in creation order, with no gaps."));
+  el.appendChild(mk("Scan coverage", c.scanCoveragePercent + "%",
+    `${c.reposScannedLast24h.toLocaleString()} scanned in the last 24h, against roughly ` +
+    `${c.estimatedNewPublicReposPerDay.toLocaleString()} new public repos a day.`));
+}
+
+function renderSeverityBars(all) {
+  const counts = ENGINE.countBySeverity(all);
+  const max = Math.max(1, ...Object.values(counts));
+  const el = $("dash-severity");
+  el.innerHTML = "";
+  for (const sev of ["critical", "high", "medium", "low"]) {
+    const row = document.createElement("div");
+    row.className = "sev-bar-row";
+    const label = document.createElement("span");
+    label.className = "sev-bar-label";
+    label.textContent = SEVERITY_LABEL[sev];
+    const track = document.createElement("span");
+    track.className = "sev-bar-track";
+    const fill = document.createElement("span");
+    fill.className = `sev-bar-fill sev-${sev}`;
+    fill.style.width = (counts[sev] / max) * 100 + "%";
+    track.appendChild(fill);
+    const value = document.createElement("span");
+    value.className = "sev-bar-value";
+    value.textContent = String(counts[sev]);
+    row.appendChild(label); row.appendChild(track); row.appendChild(value);
+    el.appendChild(row);
+  }
+}
+
+function renderTopPatterns(all) {
+  const byName = {};
+  for (const f of all) byName[f.name] = (byName[f.name] || 0) + 1;
+  const top = Object.entries(byName).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  const el = $("dash-patterns");
+  el.innerHTML = "";
+  if (!top.length) {
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "Nothing found yet.";
+    el.appendChild(p);
+    return;
+  }
+  const max = top[0][1];
+  for (const [name, count] of top) {
+    const row = document.createElement("div");
+    row.className = "rank-row";
+    const n = document.createElement("span");
+    n.className = "rank-name";
+    n.textContent = name;
+    const track = document.createElement("span");
+    track.className = "rank-track";
+    const fill = document.createElement("span");
+    fill.className = "rank-fill";
+    fill.style.width = (count / max) * 100 + "%";
+    track.appendChild(fill);
+    const c = document.createElement("span");
+    c.className = "rank-count";
+    c.textContent = String(count);
+    row.appendChild(n); row.appendChild(track); row.appendChild(c);
+    el.appendChild(row);
+  }
+}
+
+function renderDashFindings(all) {
+  const filter = $("dash-filter").value;
+  const shown = (filter ? all.filter((f) => f.severity === filter) : all).slice(0, 200);
+  const el = $("dash-findings");
+  el.innerHTML = "";
+  if (!shown.length) {
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "No findings yet. Run a scan, or let the scheduled worker publish some.";
+    el.appendChild(p);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  for (const f of shown) frag.appendChild(findingElement(f));
+  el.appendChild(frag);
+}
+
+async function exportFindings() {
+  const all = await STORE.allFindings(5000).catch(() => []);
+  // Findings were redacted at detection time, so this file contains no
+  // usable credential — only locations and redacted forms.
+  const blob = new Blob([JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    note: "Secrets are redacted. Values shown are partial and non-recoverable.",
+    findings: all,
+  }, null, 2)], { type: "application/json" });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `tripline-findings-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* =========================================================
+   Wiring
+========================================================= */
+function init() {
+  loadToken();
+  renderRateMeter();
+
+  for (const tab of document.querySelectorAll(".tab")) {
+    tab.addEventListener("click", () => showView(tab.dataset.view));
+  }
+  const hash = (location.hash || "").replace("#", "");
+  if (["scan", "batch", "live", "dashboard"].includes(hash)) showView(hash);
+
+  $("scan-form").addEventListener("submit", runSingleScan);
+  $("toggle-advanced").addEventListener("click", () => $("advanced-row").classList.toggle("hidden"));
+  $("token-input").addEventListener("change", syncToken);
+  $("remember-token").addEventListener("change", syncToken);
+
+  $("batch-form").addEventListener("submit", runBatch);
+  $("batch-pause").addEventListener("click", () => {
+    if (!batchQueue) return;
+    batchQueue.paused ? batchQueue.resume() : batchQueue.pause();
+    renderBatchQueue();
+  });
+  $("batch-cancel").addEventListener("click", () => {
+    if (!batchQueue) return;
+    batchQueue.cancel();
+    renderBatchQueue();
+  });
+
+  $("live-toggle").addEventListener("click", toggleLive);
+
+  $("dash-filter").addEventListener("change", () => refreshDashboard());
+  $("dash-export").addEventListener("click", exportFindings);
+  $("dash-clear").addEventListener("click", async () => {
+    if (!confirm("Clear all findings stored in this browser? The worker's published results are unaffected.")) return;
+    await STORE.clearAll().catch(() => {});
+    refreshDashboard();
+  });
+
+  window.addEventListener("beforeunload", (e) => {
+    if (live.running || (batchQueue && batchQueue.running)) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", init);
