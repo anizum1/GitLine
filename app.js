@@ -299,9 +299,10 @@ async function runSingleScan(e) {
 
     if (result.private) {
       const note = $("cost-note");
+      const cost = ENGINE.estimateCost(result.tree.filesScanned, true, opts);
       note.textContent =
-        `Private repo: file contents came from the API, costing about one request per file ` +
-        `(${result.tree.filesScanned} scanned).`;
+        `Private repo: file contents came from the API, not the free raw host — ` +
+        `about ${cost} requests for ${result.tree.filesScanned} files.`;
       note.classList.remove("hidden");
     }
 
@@ -558,12 +559,19 @@ async function liveLoop() {
       }
 
       const page = await client.listPublicRepositoriesSince(live.cursor);
-      const fresh = (page.repos || []).filter((r) => !r.fork && !r.private);
+      const returned = page.repos || [];
+      const fresh = returned.filter((r) => !r.fork && !r.private);
+
+      // Advance on what GitHub returned, not on what survived filtering: a
+      // page that is entirely forks would otherwise stall the cursor and
+      // re-fetch the same page forever.
+      if (returned.length) {
+        live.cursor = page.maxId;
+        await STORE.setMeta("discoveryCursor", live.cursor).catch(() => {});
+      }
 
       if (fresh.length) {
-        live.cursor = page.maxId;
         live.discovered += fresh.length;
-        await STORE.setMeta("discoveryCursor", live.cursor).catch(() => {});
 
         liveQueue.add(fresh.map((r) => ({
           owner: r.owner.login, repo: r.name,
