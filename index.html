@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tripline — scan a GitHub repo for exposed secrets</title>
+<meta name="description" content="Paste a public GitHub repo and scan its default branch for hard-coded API keys, tokens, and credentials — right in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230F1319'/%3E%3Ccircle cx='7' cy='16' r='3' fill='%23F0483E'/%3E%3Ccircle cx='25' cy='16' r='3' fill='%23F0483E'/%3E%3Cline x1='10' y1='16' x2='22' y2='16' stroke='%23F0483E' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="skyline" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="wordmark">
+      <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="7" cy="16" r="3.4" fill="var(--critical)"/>
+        <circle cx="25" cy="16" r="3.4" fill="var(--critical)"/>
+        <line x1="10.4" y1="16" x2="21.6" y2="16" stroke="var(--critical)" stroke-width="2"/>
+      </svg>
+      <span>Tripline</span>
+    </div>
+    <a class="topbar-link" href="https://github.com/" target="_blank" rel="noopener">View source</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <p class="hero-kicker">A browser-side scanner for one job</p>
+    <h1>Check a public repo for credentials it never meant to publish.</h1>
+    <p class="hero-sub">
+      Tripline reads a repository's current files straight from GitHub and checks
+      them against known key formats and high-entropy strings. Nothing is uploaded —
+      the scan runs in this tab.
+    </p>
+  </section>
+
+  <section class="console" aria-label="Scan form">
+    <form id="scan-form" autocomplete="off">
+      <div class="console-row">
+        <span class="prompt-glyph">›</span>
+        <input
+          type="text"
+          id="repo-input"
+          placeholder="github.com/owner/repository"
+          spellcheck="false"
+          aria-label="GitHub repository URL"
+        >
+        <button type="submit" id="scan-btn">Run scan</button>
+      </div>
+
+      <button type="button" id="toggle-advanced" class="link-btn">
+        Using a private/rate-limited setup? Add a token
+      </button>
+
+      <div id="advanced-row" class="advanced-row hidden">
+        <input
+          type="password"
+          id="token-input"
+          placeholder="ghp_… (optional, kept only in this browser tab)"
+          spellcheck="false"
+          aria-label="GitHub personal access token, optional"
+        >
+        <label class="remember-row">
+          <input type="checkbox" id="remember-token">
+          Remember on this device
+        </label>
+      </div>
+    </form>
+  </section>
+
+  <section id="status-area" class="status-area hidden" aria-live="polite">
+    <div class="status-line">
+      <span id="status-text">Preparing scan…</span>
+      <span id="status-count"></span>
+    </div>
+    <div class="progress-track">
+      <div id="progress-fill" class="progress-fill"></div>
+    </div>
+  </section>
+
+  <section id="error-area" class="error-banner hidden" role="alert"></section>
+
+  <section id="results-area" class="results-area hidden">
+
+    <div class="summary-row" id="summary-row"></div>
+
+    <div id="findings-list" class="findings-list"></div>
+
+  </section>
+
+  <section class="about">
+    <h2>What this does and doesn't do</h2>
+    <div class="about-grid">
+      <div>
+        <h3>Scans</h3>
+        <ul>
+          <li>Every text file on the repository's default branch, up to 300 KB per file</li>
+          <li>Known credential formats — cloud keys, CI tokens, payment keys, private key blocks, connection strings</li>
+          <li>Unlabeled high-entropy strings that look like secrets even without a known prefix</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Doesn't scan</h3>
+        <ul>
+          <li>Git history — a secret removed in a later commit can still exist in an old one</li>
+          <li>Binary files, lockfiles, or anything over the size limit</li>
+          <li>Private repos, unless you supply a token with read access</li>
+        </ul>
+      </div>
+    </div>
+    <p class="about-note">
+      Findings are pattern matches, not confirmed leaks. Verify anything flagged before
+      rotating a key, and expect a few false positives from high-entropy detection —
+      it trades precision for not missing the unlabeled cases.
+    </p>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>Tripline runs entirely in your browser. Repository contents are fetched from GitHub and never sent anywhere else.</span>
+  </div>
+</footer>
+
+<script src="patterns.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
