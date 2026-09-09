@@ -11,7 +11,7 @@
  * Browser only — the worker keeps its state in data/state.json instead.
  */
 
-const DB_NAME = "tripline";
+const DB_NAME = "gitline";
 const DB_VERSION = 1;
 
 const STORE_FINDINGS = "findings";
