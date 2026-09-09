@@ -2,7 +2,7 @@
 "use strict";
 
 /**
- * Tripline cron worker.
+ * Gitline cron worker.
  *
  * Runs on a schedule in GitHub Actions, scans what it can inside a fixed
  * budget, and writes JSON into data/ for the static dashboard to read. No
@@ -230,9 +230,12 @@ async function main() {
   const config = readJson(CONFIG_PATH, null);
   if (!config) { console.error("Cannot read worker/config.json"); process.exit(1); }
 
-  const token = process.env.TRIPLINE_TOKEN || process.env.GITHUB_TOKEN || null;
+  // TRIPLINE_TOKEN is the pre-rename name, still honoured so an existing
+  // Actions secret keeps working. GITHUB_TOKEN is the Actions default.
+  const token =
+    process.env.GITLINE_TOKEN || process.env.TRIPLINE_TOKEN || process.env.GITHUB_TOKEN || null;
   if (!token) {
-    log("! No token (TRIPLINE_TOKEN or GITHUB_TOKEN). Falling back to 60 requests/hour.");
+    log("! No token (GITLINE_TOKEN or GITHUB_TOKEN). Falling back to 60 requests/hour.");
   }
 
   const client = new GH.GitHubClient({ token });
@@ -247,7 +250,7 @@ async function main() {
   const existing = readJson(path.join(DATA_DIR, "findings.json"), { findings: [] });
   const knownKeys = new Set(existing.findings.map((f) => `${f.owner}/${f.repo}|${f.fp}|${f.file}|${f.line}`));
 
-  log(`Tripline worker — ${nowIso()}${DRY_RUN ? " (dry run)" : ""}`);
+  log(`Gitline worker — ${nowIso()}${DRY_RUN ? " (dry run)" : ""}`);
   log(`  auth: ${token ? "token" : "anonymous"}`);
 
   /* ---- pick targets ---- */
@@ -370,7 +373,7 @@ main().catch((e) => {
   if (e && e.name === "AuthError") {
     console.error(
       "\nWorker failed: " + e.message +
-      "\nSet a valid TRIPLINE_TOKEN secret, or unset it to run anonymously at 60 requests/hour."
+      "\nSet a valid GITLINE_TOKEN secret, or unset it to run anonymously at 60 requests/hour."
     );
     process.exit(1);
   }

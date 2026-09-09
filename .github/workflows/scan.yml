@@ -1,7 +1,7 @@
-name: Tripline scan
+name: Gitline scan
 
 # Runs the scanner on a schedule and commits redacted results into data/,
-# which the static dashboard reads. This is what makes Tripline keep working
+# which the static dashboard reads. This is what makes Gitline keep working
 # when nobody has the page open.
 
 on:
@@ -19,7 +19,7 @@ on:
 # Never let two runs interleave: they share data/state.json, and a cancelled
 # run mid-write would leave the discovery cursor inconsistent.
 concurrency:
-  group: tripline-scan
+  group: gitline-scan
   cancel-in-progress: false
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
           # A PAT here means the resulting commit can trigger the Pages build.
           # Pushes authenticated with GITHUB_TOKEN deliberately do not trigger
           # further workflow runs, which includes pages-build-deployment.
-          token: ${{ secrets.TRIPLINE_TOKEN || github.token }}
+          token: ${{ secrets.GITLINE_TOKEN || secrets.TRIPLINE_TOKEN || github.token }}
 
       - uses: actions/setup-node@v4
         with:
@@ -47,6 +47,8 @@ jobs:
           # A PAT gets 5,000 requests/hour. The default GITHUB_TOKEN is capped
           # at 1,000/hour per repository, which is enough to try this out but
           # will limit how many repos each run gets through.
+          GITLINE_TOKEN: ${{ secrets.GITLINE_TOKEN }}
+          # Pre-rename secret name, still honoured.
           TRIPLINE_TOKEN: ${{ secrets.TRIPLINE_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |

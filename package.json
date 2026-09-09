@@ -1,0 +1,18 @@
+{
+  "name": "gitline",
+  "version": "1.0.0",
+  "description": "Browser-side secret scanner for GitHub repositories — API keys, tokens and credentials, including git history and binaries.",
+  "license": "MIT",
+  "private": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node serve.js",
+    "serve": "node serve.js --host 127.0.0.1",
+    "test": "node test/scanner.test.js && node test/engine.test.js",
+    "scan": "node worker/run.js",
+    "scan:dry": "node worker/run.js --dry-run"
+  },
+  "keywords": ["security", "secret-scanning", "github", "credentials", "static-site"]
+}

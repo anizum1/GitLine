@@ -34,7 +34,7 @@ const $ = (id) => document.getElementById(id);
 /* =========================================================
    Token
 ========================================================= */
-const TOKEN_KEY = "tripline_token";
+const TOKEN_KEY = "gitline_token";
 
 function loadToken() {
   let saved = null;
@@ -702,7 +702,7 @@ function renderWorkerState() {
     el.className = "worker-state is-idle";
     dot.className = "dot";
     text.textContent =
-      "Scheduled worker hasn't published anything yet. Enable the Tripline scan workflow, " +
+      "Scheduled worker hasn't published anything yet. Enable the Gitline scan workflow, " +
       "or run it once from the Actions tab, and results will appear here automatically.";
   } else {
     const age = Date.now() - new Date(w.lastRunAt || w.generatedAt).getTime();
@@ -873,7 +873,7 @@ async function exportFindings() {
 
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `tripline-findings-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `gitline-findings-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
