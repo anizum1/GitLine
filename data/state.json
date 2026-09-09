@@ -1,7 +1,17 @@
 {
-  "discoveryCursor": 0,
-  "discoveryEtag": null,
+  "discoveryCursor": 1584,
+  "discoveryEtag": "W/\"e2999aaed32ee6157c86e7806f883d7c39f18d1db0cae04cc9982ca83badd4d8\"",
   "watchlist": {},
-  "totals": {},
-  "scanLog": []
+  "totals": {
+    "discovered": 178,
+    "reposScanned": 40,
+    "reposScanned24h": 40
+  },
+  "scanLog": [
+    {
+      "t": 1788981720319,
+      "n": 40
+    }
+  ],
+  "lastRunAt": "2026-09-09T19:22:00.319Z"
 }
