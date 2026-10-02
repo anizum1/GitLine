@@ -1,17 +1,13 @@
 {
-  "discoveryCursor": 100159,
-  "discoveryEtag": "W/\"97d7ed06b7a5ca4f5128b3b5a115933569511b2dba5f1b474edc9acfffbf071a\"",
+  "discoveryCursor": 100766,
+  "discoveryEtag": "W/\"a57b2832eef08b278b6f6414c20d1864c2d2ea56899099d1d0456c6ec312552f\"",
   "watchlist": {},
   "totals": {
-    "discovered": 20643,
-    "reposScanned": 5237,
+    "discovered": 20798,
+    "reposScanned": 5277,
     "reposScanned24h": 200
   },
   "scanLog": [
-    {
-      "t": 1790831374592,
-      "n": 40
-    },
     {
       "t": 1790854942045,
       "n": 40
@@ -27,7 +23,11 @@
     {
       "t": 1790905117387,
       "n": 40
+    },
+    {
+      "t": 1790926583898,
+      "n": 40
     }
   ],
-  "lastRunAt": "2026-10-02T01:38:37.387Z"
+  "lastRunAt": "2026-10-02T07:36:23.898Z"
 }
