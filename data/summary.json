@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-10-28T13:01:01.911Z",
-  "lastRunAt": "2026-10-28T13:01:01.902Z",
+  "generatedAt": "2026-10-28T18:48:06.626Z",
+  "lastRunAt": "2026-10-28T18:48:06.615Z",
   "lastRunStoppedBecause": "repo budget",
   "totals": {
-    "reposScanned": 10752,
-    "reposDiscovered": 41009,
+    "reposScanned": 10792,
+    "reposDiscovered": 41147,
     "findings": 2000,
     "historical": 0
   },
   "severity": {
     "critical": 1,
-    "high": 19,
-    "medium": 6,
-    "low": 1974
+    "high": 0,
+    "medium": 0,
+    "low": 1999
   },
   "coverage": {
     "discoveryComplete": true,
@@ -24,23 +24,7 @@
   "topPatterns": [
     {
       "name": "High-entropy string",
-      "count": 1969
-    },
-    {
-      "name": "GCP API Key",
-      "count": 16
-    },
-    {
-      "name": "Basic Auth in URL",
-      "count": 6
-    },
-    {
-      "name": "Generic Password Assignment",
-      "count": 5
-    },
-    {
-      "name": "Database Connection String",
-      "count": 3
+      "count": 1999
     },
     {
       "name": "Private Key Block",
@@ -49,405 +33,405 @@
   ],
   "topOwners": [
     {
-      "name": "hyphanet",
-      "count": 1453
+      "name": "JohannesBuchner",
+      "count": 1379
+    },
+    {
+      "name": "jaytoday",
+      "count": 188
     },
     {
       "name": "akio0911",
-      "count": 306
+      "count": 154
     },
     {
-      "name": "gmacario",
-      "count": 105
+      "name": "niw",
+      "count": 76
     },
     {
-      "name": "aallan",
-      "count": 51
+      "name": "xfun68",
+      "count": 65
     },
     {
-      "name": "neolith",
-      "count": 39
+      "name": "jney",
+      "count": 54
     },
     {
-      "name": "xli",
-      "count": 21
+      "name": "mikelikespie",
+      "count": 34
     },
     {
-      "name": "adamitrudel",
-      "count": 14
+      "name": "l",
+      "count": 19
     },
     {
-      "name": "craig1709",
-      "count": 8
+      "name": "ramereth",
+      "count": 16
     },
     {
-      "name": "bhyde",
-      "count": 2
-    },
-    {
-      "name": "robot-xx",
-      "count": 1
+      "name": "oz-camping",
+      "count": 6
     }
   ],
   "recentRepos": [
     {
-      "fullName": "maxlapshin/postgresql_complex_types",
+      "fullName": "adamsanderson/open_gem",
       "private": false,
       "findings": 0,
-      "historical": 0,
-      "filesScanned": 16,
-      "scannedAt": "2026-10-28T12:59:34.286Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/scripts",
-      "private": false,
-      "findings": 2,
-      "historical": 0,
-      "filesScanned": 63,
-      "scannedAt": "2026-10-28T12:59:36.207Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/website-old",
-      "private": false,
-      "findings": 2492,
-      "historical": 0,
-      "filesScanned": 229,
-      "scannedAt": "2026-10-28T12:59:41.002Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "neolith/oUF_Reeboo",
-      "private": false,
-      "findings": 39,
-      "historical": 0,
-      "filesScanned": 8,
-      "scannedAt": "2026-10-28T12:59:41.452Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "michaeljones/sphinx-to-github",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 16,
-      "scannedAt": "2026-10-28T12:59:42.704Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "kohlhofer/Mindmeto",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 24,
-      "scannedAt": "2026-10-28T12:59:43.714Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "bhyde/ec2-starters",
-      "private": false,
-      "findings": 2,
-      "historical": 0,
-      "filesScanned": 18,
-      "scannedAt": "2026-10-28T12:59:44.614Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "alicekey/alicekey.github.com",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 2,
-      "scannedAt": "2026-10-28T12:59:45.343Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "neolith/oUF_ReebooRaid",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 7,
-      "scannedAt": "2026-10-28T12:59:46.365Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "Peaker/mlist",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 8,
-      "scannedAt": "2026-10-28T12:59:47.440Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/lib-AdaFN",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 44,
-      "scannedAt": "2026-10-28T12:59:49.082Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/blueBunny",
-      "private": false,
-      "findings": 2,
-      "historical": 0,
-      "filesScanned": 32,
-      "scannedAt": "2026-10-28T12:59:49.932Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/plugin-old-bookmarkplugin",
-      "private": false,
-      "findings": 5,
-      "historical": 0,
-      "filesScanned": 62,
-      "scannedAt": "2026-10-28T12:59:51.639Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "adamitrudel/grandura_cms",
-      "private": false,
-      "findings": 14,
-      "historical": 0,
-      "filesScanned": 300,
-      "scannedAt": "2026-10-28T12:59:57.099Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/lib-CppFCPLib",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 38,
-      "scannedAt": "2026-10-28T12:59:58.173Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/DarknetSpiderBot",
-      "private": false,
-      "findings": 1,
-      "historical": 0,
-      "filesScanned": 6,
-      "scannedAt": "2026-10-28T12:59:58.558Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/plugin-Echo",
-      "private": false,
-      "findings": 2,
-      "historical": 0,
-      "filesScanned": 50,
-      "scannedAt": "2026-10-28T13:00:00.542Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/plugin-Freemail",
-      "private": false,
-      "findings": 34,
-      "historical": 0,
-      "filesScanned": 213,
-      "scannedAt": "2026-10-28T13:00:04.819Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/simulator-freenet-caching",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 9,
-      "scannedAt": "2026-10-28T13:00:06.408Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/simulator-freeviz",
-      "private": false,
-      "findings": 26,
       "historical": 0,
       "filesScanned": 11,
-      "scannedAt": "2026-10-28T13:00:07.436Z",
+      "scannedAt": "2026-10-28T18:46:55.603Z",
       "watchlist": false
     },
     {
-      "fullName": "aallan/estar-project",
-      "private": false,
-      "findings": 51,
-      "historical": 0,
-      "filesScanned": 300,
-      "scannedAt": "2026-10-28T13:00:14.973Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/lib-jfcp",
+      "fullName": "jrockway/pleasurechicken",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 77,
-      "scannedAt": "2026-10-28T13:00:18.336Z",
+      "filesScanned": 8,
+      "scannedAt": "2026-10-28T18:46:56.548Z",
       "watchlist": false
     },
     {
-      "fullName": "hyphanet/lib-libfcp2",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 6,
-      "scannedAt": "2026-10-28T13:00:18.784Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/old-LibrarianSpider",
+      "fullName": "Synesso/scala-chess",
       "private": false,
       "findings": 2,
       "historical": 0,
-      "filesScanned": 2,
-      "scannedAt": "2026-10-28T13:00:19.733Z",
+      "filesScanned": 40,
+      "scannedAt": "2026-10-28T18:46:58.106Z",
       "watchlist": false
     },
     {
-      "fullName": "hyphanet/simulator-load-balancing-sims",
+      "fullName": "niw/tweetie_hack",
+      "private": false,
+      "findings": 76,
+      "historical": 0,
+      "filesScanned": 45,
+      "scannedAt": "2026-10-28T18:47:00.178Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "nuance/pydystopia",
       "private": false,
       "findings": 0,
-      "historical": 0,
-      "filesScanned": 189,
-      "scannedAt": "2026-10-28T13:00:24.640Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "hyphanet/lib-perlFreenet",
-      "private": false,
-      "findings": 2,
       "historical": 0,
       "filesScanned": 5,
-      "scannedAt": "2026-10-28T13:00:25.042Z",
+      "scannedAt": "2026-10-28T18:47:00.920Z",
       "watchlist": false
     },
     {
-      "fullName": "robot-xx/gacco",
+      "fullName": "func09/bookmark-factorygirl-sample",
       "private": false,
       "findings": 1,
       "historical": 0,
-      "filesScanned": 55,
-      "scannedAt": "2026-10-28T13:00:26.852Z",
+      "filesScanned": 77,
+      "scannedAt": "2026-10-28T18:47:04.891Z",
       "watchlist": false
     },
     {
-      "fullName": "hyphanet/pyFreenet",
-      "private": false,
-      "findings": 724,
-      "historical": 0,
-      "filesScanned": 291,
-      "scannedAt": "2026-10-28T13:00:33.174Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "gmacario/gmacario.github.io",
-      "private": false,
-      "findings": 105,
-      "historical": 0,
-      "filesScanned": 239,
-      "scannedAt": "2026-10-28T13:00:38.540Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "craig1709/Shoal",
-      "private": false,
-      "findings": 8,
-      "historical": 0,
-      "filesScanned": 195,
-      "scannedAt": "2026-10-28T13:00:42.116Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "kmdsbng/opt_simple",
+      "fullName": "newhouseb/MatTex",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 2,
-      "scannedAt": "2026-10-28T13:00:42.485Z",
+      "filesScanned": 5,
+      "scannedAt": "2026-10-28T18:47:05.336Z",
       "watchlist": false
     },
     {
-      "fullName": "nall/FPGA-la",
+      "fullName": "ibvk/config",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 137,
-      "scannedAt": "2026-10-28T13:00:45.740Z",
+      "filesScanned": 89,
+      "scannedAt": "2026-10-28T18:47:07.798Z",
       "watchlist": false
     },
     {
-      "fullName": "nao58/jquery-type-writing-hint",
+      "fullName": "ramereth/gnr-overlay",
+      "private": false,
+      "findings": 16,
+      "historical": 0,
+      "filesScanned": 105,
+      "scannedAt": "2026-10-28T18:47:09.984Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "tongueroo/automaton",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 22,
+      "scannedAt": "2026-10-28T18:47:10.695Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "mvz/nautilus-trash-date-deleted",
       "private": false,
       "findings": 0,
       "historical": 0,
       "filesScanned": 4,
-      "scannedAt": "2026-10-28T13:00:46.076Z",
+      "scannedAt": "2026-10-28T18:47:11.351Z",
       "watchlist": false
     },
     {
-      "fullName": "liuxu/ActiveProcess",
+      "fullName": "pjotrp/cmake-support",
+      "private": false,
+      "findings": 1,
+      "historical": 0,
+      "filesScanned": 34,
+      "scannedAt": "2026-10-28T18:47:12.976Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "mikelikespie/oauth-repoze",
+      "private": false,
+      "findings": 34,
+      "historical": 0,
+      "filesScanned": 43,
+      "scannedAt": "2026-10-28T18:47:14.106Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "analogrelay/MaVeriCk",
       "private": false,
       "findings": 0,
-      "historical": 0,
-      "filesScanned": 1,
-      "scannedAt": "2026-10-28T13:00:47.088Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "pepeiborra/control-monad-exception",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 14,
-      "scannedAt": "2026-10-28T13:00:48.355Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "xli/fireworks-intellij-plugin",
-      "private": false,
-      "findings": 21,
       "historical": 0,
       "filesScanned": 300,
-      "scannedAt": "2026-10-28T13:00:54.747Z",
+      "scannedAt": "2026-10-28T18:47:19.514Z",
       "watchlist": false
     },
     {
-      "fullName": "hyphanet/pyFreenetHg",
+      "fullName": "jaytoday/shortable",
       "private": false,
-      "findings": 28,
+      "findings": 188,
       "historical": 0,
-      "filesScanned": 6,
-      "scannedAt": "2026-10-28T13:00:55.239Z",
+      "filesScanned": 219,
+      "scannedAt": "2026-10-28T18:47:24.146Z",
       "watchlist": false
     },
     {
-      "fullName": "hyphanet/rpm",
+      "fullName": "emorrp1/hike-tracker",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 31,
+      "scannedAt": "2026-10-28T18:47:24.996Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "waveninja/sinatra-test",
+      "private": false,
+      "findings": 5,
+      "historical": 0,
+      "filesScanned": 9,
+      "scannedAt": "2026-10-28T18:47:25.630Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "l/test",
+      "private": false,
+      "findings": 19,
+      "historical": 0,
+      "filesScanned": 22,
+      "scannedAt": "2026-10-28T18:47:27.934Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "odge/parseq",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 3,
+      "scannedAt": "2026-10-28T18:47:29.604Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "siti/boptest",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 37,
+      "scannedAt": "2026-10-28T18:47:31.147Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "jney/tabbr",
+      "private": false,
+      "findings": 54,
+      "historical": 0,
+      "filesScanned": 300,
+      "scannedAt": "2026-10-28T18:47:36.503Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "ldo2/JBricks",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 55,
+      "scannedAt": "2026-10-28T18:47:38.318Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "andreisavu/music-share",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 32,
+      "scannedAt": "2026-10-28T18:47:39.418Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "oz-camping/oz-camping",
+      "private": false,
+      "findings": 6,
+      "historical": 0,
+      "filesScanned": 153,
+      "scannedAt": "2026-10-28T18:47:44.427Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "xfun68/test",
+      "private": false,
+      "findings": 65,
+      "historical": 0,
+      "filesScanned": 120,
+      "scannedAt": "2026-10-28T18:47:46.794Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "moomerman/moomerman.github.com",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 2,
+      "scannedAt": "2026-10-28T18:47:47.109Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "timd/marketbear",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 8,
+      "scannedAt": "2026-10-28T18:47:48.247Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "voormedia/sedna-ruby",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 7,
+      "scannedAt": "2026-10-28T18:47:49.227Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "schinckel/SWI-Prolog.tmbundle",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 5,
+      "scannedAt": "2026-10-28T18:47:50.175Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "vakaras/Dokumentacija",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 2,
+      "scannedAt": "2026-10-28T18:47:51.110Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "JohannesBuchner/condor_optimization",
+      "private": false,
+      "findings": 1379,
+      "historical": 0,
+      "filesScanned": 300,
+      "scannedAt": "2026-10-28T18:47:57.058Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "nmilinkovic/Skadi",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 47,
+      "scannedAt": "2026-10-28T18:47:58.138Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "l04m33/PETS-source",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 31,
+      "scannedAt": "2026-10-28T18:47:59.057Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "yosmoc/bbjs",
       "private": false,
       "findings": 0,
       "historical": 0,
       "filesScanned": 1,
-      "scannedAt": "2026-10-28T13:00:57.212Z",
+      "scannedAt": "2026-10-28T18:47:59.530Z",
       "watchlist": false
     },
     {
-      "fullName": "hyphanet/simulator-simsalabim",
+      "fullName": "astrails/astrails-form-builder",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 59,
-      "scannedAt": "2026-10-28T13:00:59.635Z",
+      "filesScanned": 9,
+      "scannedAt": "2026-10-28T18:48:00.629Z",
       "watchlist": false
     },
     {
-      "fullName": "akio0911/learning2009",
+      "fullName": "JohannesBuchner/nobrain_optimization",
       "private": false,
-      "findings": 306,
+      "findings": 0,
       "historical": 0,
-      "filesScanned": 97,
-      "scannedAt": "2026-10-28T13:01:01.894Z",
+      "filesScanned": 12,
+      "scannedAt": "2026-10-28T18:48:02.742Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "siebertm/js-router",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 5,
+      "scannedAt": "2026-10-28T18:48:03.668Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "tdtds/rego",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 10,
+      "scannedAt": "2026-10-28T18:48:04.646Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "luontola/tdd-tetris-tutorial",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 38,
+      "scannedAt": "2026-10-28T18:48:06.273Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "mik8y/mik8yemacs",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 4,
+      "scannedAt": "2026-10-28T18:48:06.606Z",
       "watchlist": false
     }
   ],
@@ -455,20 +439,20 @@
     "core": {
       "resource": "core",
       "limit": 5000,
-      "remaining": 4949,
-      "used": 51,
-      "resetAt": 1793195785000,
-      "at": 1793192459877
+      "remaining": 4946,
+      "used": 54,
+      "resetAt": 1793216627000,
+      "at": 1793213286505
     }
   },
   "runStats": {
     "reposScanned": 40,
-    "apiCalls": 49,
-    "rawCalls": 3136,
+    "apiCalls": 52,
+    "rawCalls": 2250,
     "rawThrottles": 0,
     "notModified": 0,
-    "seconds": 272,
-    "newFindings": 3867,
+    "seconds": 255,
+    "newFindings": 1846,
     "findingsWithheldPrivate": 0
   }
 }
