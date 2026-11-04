@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-11-04T10:00:51.547Z",
-  "lastRunAt": "2026-11-04T10:00:51.536Z",
+  "generatedAt": "2026-11-04T17:58:12.515Z",
+  "lastRunAt": "2026-11-04T17:58:12.508Z",
   "lastRunStoppedBecause": "repo budget",
   "totals": {
-    "reposScanned": 11884,
-    "reposDiscovered": 45273,
+    "reposScanned": 11924,
+    "reposDiscovered": 45410,
     "findings": 2000,
     "historical": 0
   },
   "severity": {
     "critical": 0,
     "high": 0,
-    "medium": 2,
-    "low": 1998
+    "medium": 9,
+    "low": 1991
   },
   "coverage": {
     "discoveryComplete": true,
@@ -24,21 +24,37 @@
   "topPatterns": [
     {
       "name": "High-entropy string",
-      "count": 1998
+      "count": 1985
     },
     {
       "name": "Basic Auth in URL",
-      "count": 2
+      "count": 9
+    },
+    {
+      "name": "Generic Password Assignment",
+      "count": 6
     }
   ],
   "topOwners": [
     {
       "name": "sarahstreza",
-      "count": 1405
+      "count": 647
+    },
+    {
+      "name": "paytonrules",
+      "count": 379
     },
     {
       "name": "aftermathew",
       "count": 359
+    },
+    {
+      "name": "davisp",
+      "count": 235
+    },
+    {
+      "name": "langmartin",
+      "count": 114
     },
     {
       "name": "Ramblurr",
@@ -59,379 +75,367 @@
     {
       "name": "iterati",
       "count": 20
-    },
-    {
-      "name": "Gajendra",
-      "count": 9
-    },
-    {
-      "name": "cluttermouth",
-      "count": 5
-    },
-    {
-      "name": "handcrafted",
-      "count": 4
     }
   ],
   "recentRepos": [
     {
-      "fullName": "sarahstreza/flash-machine",
+      "fullName": "paytonrules/GameOfLife",
       "private": false,
-      "findings": 1834,
+      "findings": 379,
       "historical": 0,
       "filesScanned": 85,
-      "scannedAt": "2026-11-04T09:59:39.720Z",
+      "scannedAt": "2026-11-04T17:56:09.879Z",
       "watchlist": false
     },
     {
-      "fullName": "rosenfeld/rails_error_pages_br",
+      "fullName": "rkitover/uri-smarturi",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 5,
-      "scannedAt": "2026-11-04T09:59:40.138Z",
+      "filesScanned": 7,
+      "scannedAt": "2026-11-04T17:56:10.543Z",
       "watchlist": false
     },
     {
-      "fullName": "jaz303/ztest",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 18,
-      "scannedAt": "2026-11-04T09:59:41.474Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "Chip000/2009s1mo611",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 36,
-      "scannedAt": "2026-11-04T09:59:42.802Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "rafl/devel-beginlift",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 13,
-      "scannedAt": "2026-11-04T09:59:43.414Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "rubidine/archived_record",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 4,
-      "scannedAt": "2026-11-04T09:59:44.163Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "rubidine/if_changes",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 4,
-      "scannedAt": "2026-11-04T09:59:45.248Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "Ramblurr/lastfm-android",
-      "private": false,
-      "findings": 103,
-      "historical": 0,
-      "filesScanned": 300,
-      "scannedAt": "2026-11-04T09:59:53.356Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "cluttermouth/democlarity",
-      "private": false,
-      "findings": 5,
-      "historical": 0,
-      "filesScanned": 54,
-      "scannedAt": "2026-11-04T09:59:54.952Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "rubidine/slug_from",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 4,
-      "scannedAt": "2026-11-04T09:59:55.342Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "samtaufa/wordsearch",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 42,
-      "scannedAt": "2026-11-04T09:59:57.383Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "apla/machug",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 78,
-      "scannedAt": "2026-11-04T09:59:59.463Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "nezetic/ruby-xbmc",
+      "fullName": "beepscore/mebay",
       "private": false,
       "findings": 1,
       "historical": 0,
-      "filesScanned": 3,
-      "scannedAt": "2026-11-04T09:59:59.935Z",
+      "filesScanned": 63,
+      "scannedAt": "2026-11-04T17:56:13.543Z",
       "watchlist": false
     },
     {
-      "fullName": "nezetic/ncXBMC",
+      "fullName": "voxpelli/jquery-positionrelativeto",
       "private": false,
       "findings": 0,
       "historical": 0,
       "filesScanned": 2,
-      "scannedAt": "2026-11-04T10:00:00.835Z",
+      "scannedAt": "2026-11-04T17:56:13.943Z",
       "watchlist": false
     },
     {
-      "fullName": "handcrafted/handcrafted-webby",
+      "fullName": "ashlux/igFinance",
       "private": false,
-      "findings": 4,
+      "findings": 1,
+      "historical": 0,
+      "filesScanned": 300,
+      "scannedAt": "2026-11-04T17:56:27.512Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "langmartin/orangesoda",
+      "private": false,
+      "findings": 114,
+      "historical": 0,
+      "filesScanned": 29,
+      "scannedAt": "2026-11-04T17:56:29.059Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "methodmissing/railswaycon_events",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 11,
+      "scannedAt": "2026-11-04T17:56:30.780Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "andrewroth/gcx_resource_lib",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 12,
+      "scannedAt": "2026-11-04T17:56:31.973Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "iamsolarpowered/videoclip",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 10,
+      "scannedAt": "2026-11-04T17:56:33.306Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "randybud/brain",
+      "private": false,
+      "findings": 1,
+      "historical": 0,
+      "filesScanned": 39,
+      "scannedAt": "2026-11-04T17:56:35.765Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "jacobat/cyclic",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 14,
+      "scannedAt": "2026-11-04T17:56:37.090Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "jexp/dslbook",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 25,
+      "scannedAt": "2026-11-04T17:56:38.764Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "kalebwalton/radiant-podcast",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 54,
+      "scannedAt": "2026-11-04T17:56:42.460Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "illuminerdi/nanowrimo",
+      "private": false,
+      "findings": 1,
+      "historical": 0,
+      "filesScanned": 35,
+      "scannedAt": "2026-11-04T17:56:44.256Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "ningerso/eupnp",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 25,
+      "scannedAt": "2026-11-04T17:56:47.369Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "phtrivier/euro",
+      "private": false,
+      "findings": 0,
       "historical": 0,
       "filesScanned": 24,
-      "scannedAt": "2026-11-04T10:00:02.434Z",
+      "scannedAt": "2026-11-04T17:56:48.516Z",
       "watchlist": false
     },
     {
-      "fullName": "Ramblurr/mp3tunes-android",
-      "private": false,
-      "findings": 2,
-      "historical": 0,
-      "filesScanned": 79,
-      "scannedAt": "2026-11-04T10:00:04.615Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "brapse/ghosts",
+      "fullName": "chalkers/Post-Feature",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 5,
-      "scannedAt": "2026-11-04T10:00:05.099Z",
+      "filesScanned": 1,
+      "scannedAt": "2026-11-04T17:56:48.938Z",
       "watchlist": false
     },
     {
-      "fullName": "tsupo/xmlRPC",
+      "fullName": "Clansuite/Clansuite",
       "private": false,
-      "findings": 24,
+      "findings": 6,
       "historical": 0,
-      "filesScanned": 64,
-      "scannedAt": "2026-11-04T10:00:07.920Z",
+      "filesScanned": 300,
+      "scannedAt": "2026-11-04T17:57:08.356Z",
       "watchlist": false
     },
     {
-      "fullName": "huddlej/tasks",
+      "fullName": "softprops/nuwords",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 20,
-      "scannedAt": "2026-11-04T10:00:08.900Z",
+      "filesScanned": 11,
+      "scannedAt": "2026-11-04T17:57:09.199Z",
       "watchlist": false
     },
     {
-      "fullName": "mmzyk/getencouraged",
+      "fullName": "hamen/intelswitch",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 2,
+      "scannedAt": "2026-11-04T17:57:09.772Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "nvie/git-it",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 11,
+      "scannedAt": "2026-11-04T17:57:11.008Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "ioptics/tomlambert.me",
+      "private": false,
+      "findings": 1,
+      "historical": 0,
+      "filesScanned": 100,
+      "scannedAt": "2026-11-04T17:57:17.140Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "isomer/isomer-iauthd",
+      "private": false,
+      "findings": 12,
+      "historical": 0,
+      "filesScanned": 41,
+      "scannedAt": "2026-11-04T17:57:21.997Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "softmodal/jquery_plugins",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 10,
+      "scannedAt": "2026-11-04T17:57:23.094Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "chalkers/Comments-Feature",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 1,
+      "scannedAt": "2026-11-04T17:57:23.736Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "timvdm/OBDepict",
       "private": false,
       "findings": 0,
       "historical": 0,
       "filesScanned": 19,
-      "scannedAt": "2026-11-04T10:00:09.699Z",
+      "scannedAt": "2026-11-04T17:57:25.450Z",
       "watchlist": false
     },
     {
-      "fullName": "nagaozen/asp-xtreme-evolution",
-      "private": false,
-      "findings": 40,
-      "historical": 0,
-      "filesScanned": 300,
-      "scannedAt": "2026-11-04T10:00:17.926Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "bobtfish/alien-apachemq",
+      "fullName": "xdotcommer/resourceful-csv",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 16,
-      "scannedAt": "2026-11-04T10:00:18.711Z",
+      "filesScanned": 12,
+      "scannedAt": "2026-11-04T17:57:26.252Z",
       "watchlist": false
     },
     {
-      "fullName": "technoweenie/serialized_attributes",
+      "fullName": "thomd/icon-love",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 23,
-      "scannedAt": "2026-11-04T10:00:19.773Z",
+      "filesScanned": 14,
+      "scannedAt": "2026-11-04T17:57:27.935Z",
       "watchlist": false
     },
     {
-      "fullName": "tsupo/subcrawler",
+      "fullName": "micha/resty",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 8,
-      "scannedAt": "2026-11-04T10:00:20.393Z",
+      "filesScanned": 21,
+      "scannedAt": "2026-11-04T17:57:29.291Z",
       "watchlist": false
     },
     {
-      "fullName": "bct/sloth-log",
+      "fullName": "tmolteno/SympyTeX",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 25,
+      "scannedAt": "2026-11-04T17:57:31.294Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "andrewfromcali/oceancommute",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 1,
+      "scannedAt": "2026-11-04T17:57:31.754Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "legoscia/hsxmpp",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 22,
+      "scannedAt": "2026-11-04T17:57:35.275Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "mrkurt/mochiweb",
+      "private": false,
+      "findings": 6,
+      "historical": 0,
+      "filesScanned": 43,
+      "scannedAt": "2026-11-04T17:57:37.825Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "aliclark/php-web-apps",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 2,
+      "scannedAt": "2026-11-04T17:57:38.292Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "karbassi/Page-Management",
+      "private": false,
+      "findings": 0,
+      "historical": 0,
+      "filesScanned": 20,
+      "scannedAt": "2026-11-04T17:57:40.274Z",
+      "watchlist": false
+    },
+    {
+      "fullName": "jmstaley/pytimer",
       "private": false,
       "findings": 0,
       "historical": 0,
       "filesScanned": 5,
-      "scannedAt": "2026-11-04T10:00:21.396Z",
+      "scannedAt": "2026-11-04T17:57:40.884Z",
       "watchlist": false
     },
     {
-      "fullName": "iterati/interpo",
-      "private": false,
-      "findings": 20,
-      "historical": 0,
-      "filesScanned": 15,
-      "scannedAt": "2026-11-04T10:00:22.643Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "gak/isping",
+      "fullName": "simonrussell/ruby_accelerator",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 15,
-      "scannedAt": "2026-11-04T10:00:23.535Z",
+      "filesScanned": 10,
+      "scannedAt": "2026-11-04T17:57:42.023Z",
       "watchlist": false
     },
     {
-      "fullName": "jeanabraham/videoDatabaseApp",
+      "fullName": "davisp/couchdb",
       "private": false,
-      "findings": 1,
-      "historical": 0,
-      "filesScanned": 118,
-      "scannedAt": "2026-11-04T10:00:26.994Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "eweitnauer/flowhan",
-      "private": false,
-      "findings": 2,
-      "historical": 0,
-      "filesScanned": 24,
-      "scannedAt": "2026-11-04T10:00:27.982Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "madriska/incremental_svd",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 4,
-      "scannedAt": "2026-11-04T10:00:28.489Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "BenHall/MefUnit",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 17,
-      "scannedAt": "2026-11-04T10:00:29.701Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "chromakode/skirmish",
-      "private": false,
-      "findings": 1,
-      "historical": 0,
-      "filesScanned": 1,
-      "scannedAt": "2026-11-04T10:00:30.394Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "mooseman/teagit",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 16,
-      "scannedAt": "2026-11-04T10:00:31.682Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "mileszs/milesandmelissa.com",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 35,
-      "scannedAt": "2026-11-04T10:00:33.176Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "Gajendra/todo",
-      "private": false,
-      "findings": 9,
-      "historical": 0,
-      "filesScanned": 77,
-      "scannedAt": "2026-11-04T10:00:35.594Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "rkitover/net-ssh2",
-      "private": false,
-      "findings": 0,
-      "historical": 0,
-      "filesScanned": 29,
-      "scannedAt": "2026-11-04T10:00:36.611Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "certik/hermes2d",
-      "private": false,
-      "findings": 1,
+      "findings": 235,
       "historical": 0,
       "filesScanned": 300,
-      "scannedAt": "2026-11-04T10:00:43.752Z",
+      "scannedAt": "2026-11-04T17:58:06.301Z",
       "watchlist": false
     },
     {
-      "fullName": "aftermathew/Fresh-Perspective",
+      "fullName": "chalkers/blog-not-refactored",
       "private": false,
-      "findings": 359,
+      "findings": 1,
       "historical": 0,
-      "filesScanned": 17,
-      "scannedAt": "2026-11-04T10:00:44.657Z",
+      "filesScanned": 78,
+      "scannedAt": "2026-11-04T17:58:10.043Z",
       "watchlist": false
     },
     {
-      "fullName": "jarrett/rbbcode",
+      "fullName": "jarofgreen/TaggedWiki",
       "private": false,
       "findings": 0,
       "historical": 0,
-      "filesScanned": 23,
-      "scannedAt": "2026-11-04T10:00:45.591Z",
-      "watchlist": false
-    },
-    {
-      "fullName": "mapstraction/sandbox",
-      "private": false,
-      "findings": 23,
-      "historical": 0,
-      "filesScanned": 253,
-      "scannedAt": "2026-11-04T10:00:51.527Z",
+      "filesScanned": 21,
+      "scannedAt": "2026-11-04T17:58:12.502Z",
       "watchlist": false
     }
   ],
@@ -439,20 +443,20 @@
     "core": {
       "resource": "core",
       "limit": 5000,
-      "remaining": 4953,
-      "used": 47,
-      "resetAt": 1793789792000,
-      "at": 1793786446060
+      "remaining": 4952,
+      "used": 48,
+      "resetAt": 1793818378000,
+      "at": 1793815091323
     }
   },
   "runStats": {
     "reposScanned": 40,
-    "apiCalls": 47,
-    "rawCalls": 2157,
+    "apiCalls": 48,
+    "rawCalls": 1818,
     "rawThrottles": 0,
     "notModified": 0,
-    "seconds": 259,
-    "newFindings": 2429,
+    "seconds": 314,
+    "newFindings": 758,
     "findingsWithheldPrivate": 0
   }
 }
